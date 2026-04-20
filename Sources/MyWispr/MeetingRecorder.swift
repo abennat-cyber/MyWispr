@@ -3,24 +3,29 @@ import Foundation
 import ScreenCaptureKit
 
 /// Records microphone and system audio (speakers/apps) simultaneously.
-/// The two streams are saved to separate temporary files, then mixed
-/// into a single .m4a in the user's recordings folder via AVMutableComposition.
+/// Mic is captured via AVAudioRecorder. System audio is captured via
+/// ScreenCaptureKit and written to a separate temp file. On stop, both
+/// files are mixed into a single .m4a using AVMutableComposition.
 @MainActor
 final class MeetingRecorder: NSObject {
+
+    // MARK: - State
+
     private var micRecorder: AVAudioRecorder?
     private var micTempURL: URL?
 
     private var scStream: SCStream?
-    // These are written on main actor but read on systemQueue via [weak self] captures.
-    // Access from the background queue only happens after the main-actor write completes.
+    private var systemAudioHandler: SystemAudioHandler?  // strong ref — prevents dealloc mid-stream
     nonisolated(unsafe) private var systemWriter: AVAssetWriter?
     nonisolated(unsafe) private var systemInput: AVAssetWriterInput?
     private var systemTempURL: URL?
-    private let systemQueue = DispatchQueue(label: "com.abennat.mywispr.system-audio")
+    private let systemQueue = DispatchQueue(label: "com.abennat.mywispr.system-audio", qos: .userInitiated)
     nonisolated(unsafe) private var systemWriterStarted = false
 
     private var outputURL: URL?
     private var isCapturingSystem = false
+
+    // MARK: - Errors
 
     enum MeetingError: Error, LocalizedError {
         case notRecording
@@ -29,16 +34,15 @@ final class MeetingRecorder: NSObject {
 
         var errorDescription: String? {
             switch self {
-            case .notRecording: return "Meeting recording is not active."
-            case .mixFailed(let m): return "Failed to mix audio: \(m)"
+            case .notRecording:      return "Meeting recording is not active."
+            case .mixFailed(let m):  return "Failed to mix audio: \(m)"
             case .setupFailed(let m): return "Meeting recorder setup failed: \(m)"
             }
         }
     }
 
-    // MARK: - Public
+    // MARK: - Public API
 
-    /// Returns the destination URL (recording hasn't started yet — call start()).
     func start(in directory: String) async throws -> URL {
         let dir = resolve(directory)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -49,7 +53,7 @@ final class MeetingRecorder: NSObject {
         outputURL = dest
 
         try startMic()
-        await startSystemAudio()   // best-effort; proceeds without if permission missing
+        await startSystemAudio()   // best-effort; proceeds mic-only if SCK permission denied
 
         return dest
     }
@@ -57,49 +61,63 @@ final class MeetingRecorder: NSObject {
     func stop() async throws -> URL {
         guard let dest = outputURL else { throw MeetingError.notRecording }
 
-        // Stop mic
         micRecorder?.stop()
+        micRecorder = nil
 
-        // Stop system audio
         if isCapturingSystem {
             try? await scStream?.stopCapture()
             scStream = nil
         }
 
-        // Finish the asset writer
+        // Finish the AVAssetWriter for system audio on its dedicated queue,
+        // with a 5-second safety timeout to prevent the app hanging.
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
+            let alreadyResumed = AlreadyResumed()
+            let timeout = DispatchWorkItem {
+                if alreadyResumed.markDone() { cont.resume() }
+            }
+            DispatchQueue.global().asyncAfter(deadline: .now() + 5, execute: timeout)
+
             systemQueue.async { [weak self] in
-                guard let self else { cont.resume(); return }
+                guard let self else {
+                    timeout.cancel()
+                    if alreadyResumed.markDone() { cont.resume() }
+                    return
+                }
                 self.systemInput?.markAsFinished()
                 if self.systemWriterStarted {
-                    self.systemWriter?.finishWriting { cont.resume() }
+                    self.systemWriter?.finishWriting {
+                        timeout.cancel()
+                        if alreadyResumed.markDone() { cont.resume() }
+                    }
                 } else {
-                    cont.resume()
+                    timeout.cancel()
+                    if alreadyResumed.markDone() { cont.resume() }
                 }
             }
         }
 
-        // Mix mic + system into the destination file
-        let micURL  = micTempURL
-        let sysURL  = systemTempURL
+        systemAudioHandler = nil
+        systemWriter = nil
+        systemInput  = nil
+
+        let micURL = micTempURL
+        let sysURL = systemTempURL
+
+        defer {
+            [micURL, sysURL].compactMap { $0 }.forEach { try? FileManager.default.removeItem(at: $0) }
+            outputURL         = nil
+            micTempURL        = nil
+            systemTempURL     = nil
+            isCapturingSystem = false
+            systemWriterStarted = false
+        }
 
         try await mix(mic: micURL, system: sysURL, into: dest)
-
-        // Cleanup temps
-        [micURL, sysURL].compactMap { $0 }.forEach { try? FileManager.default.removeItem(at: $0) }
-
-        outputURL       = nil
-        micTempURL      = nil
-        systemTempURL   = nil
-        systemWriter    = nil
-        systemInput     = nil
-        isCapturingSystem = false
-        systemWriterStarted = false
-
         return dest
     }
 
-    // MARK: - Mic recording
+    // MARK: - Mic
 
     private func startMic() throws {
         let url = FileManager.default.temporaryDirectory
@@ -107,13 +125,14 @@ final class MeetingRecorder: NSObject {
         micTempURL = url
 
         let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderBitRateKey: 128_000,
+            AVFormatIDKey:          Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey:        44100,
+            AVNumberOfChannelsKey:  1,
+            AVEncoderBitRateKey:    96_000,
         ]
-        micRecorder = try AVAudioRecorder(url: url, settings: settings)
-        micRecorder?.record()
+        let recorder = try AVAudioRecorder(url: url, settings: settings)
+        recorder.record()
+        micRecorder = recorder
     }
 
     // MARK: - System audio (ScreenCaptureKit)
@@ -126,10 +145,10 @@ final class MeetingRecorder: NSObject {
         guard let writer = try? AVAssetWriter(outputURL: url, fileType: .m4a) else { return }
 
         let audioSettings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44100,
-            AVNumberOfChannelsKey: 2,
-            AVEncoderBitRateKey: 128_000,
+            AVFormatIDKey:          Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey:        44100,
+            AVNumberOfChannelsKey:  2,
+            AVEncoderBitRateKey:    96_000,
         ]
         let input = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
         input.expectsMediaDataInRealTime = true
@@ -139,84 +158,116 @@ final class MeetingRecorder: NSObject {
         systemInput  = input
 
         do {
-            let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+            let content = try await SCShareableContent.excludingDesktopWindows(
+                false, onScreenWindowsOnly: false
+            )
             guard let display = content.displays.first else { return }
 
-            let filter = SCContentFilter(display: display, excludingApplications: [], exceptingWindows: [])
+            let filter = SCContentFilter(
+                display: display,
+                excludingApplications: [],
+                exceptingWindows: []
+            )
 
             let cfg = SCStreamConfiguration()
             cfg.capturesAudio = true
             cfg.excludesCurrentProcessAudio = true
-            cfg.sampleRate = 44100
+            cfg.sampleRate   = 44100
             cfg.channelCount = 2
-            // Minimal video (required by SCStream even when only capturing audio)
+            // SCStream requires a video config even for audio-only use.
+            // Use the absolute minimum to avoid wasting memory on video frames.
             cfg.width  = 2
             cfg.height = 2
-            cfg.minimumFrameInterval = CMTime(value: 1, timescale: 1)
+            cfg.minimumFrameInterval = CMTime(value: 1, timescale: 1)  // 1 fps max
 
             let stream = SCStream(filter: filter, configuration: cfg, delegate: nil)
-            let handler = SystemAudioHandler(writer: writer, input: input, queue: systemQueue) { [weak self] in
+
+            // Keep a strong reference so the handler lives as long as the stream.
+            let handler = SystemAudioHandler(
+                writer: writer,
+                input: input,
+                queue: systemQueue
+            ) { [weak self] in
                 self?.systemWriterStarted = true
             }
+            systemAudioHandler = handler
+
+            // Register ONLY for audio output — video frames are never delivered to us
+            // so the framework discards them after the minimum processing needed by SCStream.
             try stream.addStreamOutput(handler, type: .audio, sampleHandlerQueue: systemQueue)
             try await stream.startCapture()
 
             scStream = stream
             isCapturingSystem = true
+
         } catch {
-            // Screen Recording permission not granted or no display — mic only
-            systemTempURL = nil
+            // Permission not granted or no display — fall back to mic only.
+            systemTempURL    = nil
+            systemWriter     = nil
+            systemInput      = nil
+            systemAudioHandler = nil
         }
     }
 
     // MARK: - Mixing
 
     private func mix(mic: URL?, system: URL?, into dest: URL) async throws {
-        // If we only have mic (system capture failed), just move the mic file
         guard let micURL = mic else {
             throw MeetingError.setupFailed("Microphone recording file missing.")
         }
 
-        guard let sysURL = system, FileManager.default.fileExists(atPath: sysURL.path) else {
-            // System audio unavailable — use mic only, convert to destination
-            try await convertToM4A(from: micURL, to: dest)
+        // If system audio wasn't captured, just export mic directly.
+        guard let sysURL = system,
+              FileManager.default.fileExists(atPath: sysURL.path),
+              (try? FileManager.default.attributesOfItem(atPath: sysURL.path))?[.size] as? Int ?? 0 > 4096
+        else {
+            try await exportAsM4A(from: micURL, to: dest)
             return
         }
 
-        // Mix mic + system using AVMutableComposition
         let composition = AVMutableComposition()
+        let micAsset    = AVURLAsset(url: micURL)
+        let sysAsset    = AVURLAsset(url: sysURL)
 
-        let micAsset = AVURLAsset(url: micURL)
-        let sysAsset = AVURLAsset(url: sysURL)
-
-        let micDuration  = try await micAsset.load(.duration)
-        let sysDuration  = try await sysAsset.load(.duration)
+        let micDuration   = try await micAsset.load(.duration)
+        let sysDuration   = try await sysAsset.load(.duration)
         let finalDuration = max(micDuration, sysDuration)
 
+        // Insert mic track
         if let micTracks = try? await micAsset.loadTracks(withMediaType: .audio),
            let micTrack  = micTracks.first,
-           let compMicTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
-            try compMicTrack.insertTimeRange(
+           let compTrack = composition.addMutableTrack(
+               withMediaType: .audio,
+               preferredTrackID: kCMPersistentTrackID_Invalid
+           ) {
+            try compTrack.insertTimeRange(
                 CMTimeRange(start: .zero, duration: micDuration),
                 of: micTrack, at: .zero
             )
         }
 
+        // Insert system audio track alongside (not after) the mic track
         if let sysTracks = try? await sysAsset.loadTracks(withMediaType: .audio),
            let sysTrack  = sysTracks.first,
-           let compSysTrack = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
-            try compSysTrack.insertTimeRange(
+           let compTrack = composition.addMutableTrack(
+               withMediaType: .audio,
+               preferredTrackID: kCMPersistentTrackID_Invalid
+           ) {
+            try compTrack.insertTimeRange(
                 CMTimeRange(start: .zero, duration: sysDuration),
                 of: sysTrack, at: .zero
             )
         }
 
-        guard let exporter = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetAppleM4A) else {
+        guard let exporter = AVAssetExportSession(
+            asset: composition,
+            presetName: AVAssetExportPresetAppleM4A
+        ) else {
             throw MeetingError.mixFailed("AVAssetExportSession unavailable.")
         }
-        exporter.outputURL = dest
+        exporter.outputURL      = dest
         exporter.outputFileType = .m4a
-        exporter.timeRange = CMTimeRange(start: .zero, duration: finalDuration)
+        exporter.timeRange      = CMTimeRange(start: .zero, duration: finalDuration)
 
         await exporter.export()
 
@@ -225,12 +276,12 @@ final class MeetingRecorder: NSObject {
         }
     }
 
-    private func convertToM4A(from source: URL, to dest: URL) async throws {
+    private func exportAsM4A(from source: URL, to dest: URL) async throws {
         let asset = AVURLAsset(url: source)
         guard let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
             throw MeetingError.mixFailed("AVAssetExportSession unavailable.")
         }
-        exporter.outputURL = dest
+        exporter.outputURL      = dest
         exporter.outputFileType = .m4a
         await exporter.export()
         if let error = exporter.error {
@@ -240,30 +291,58 @@ final class MeetingRecorder: NSObject {
 
     private func resolve(_ path: String) -> URL {
         if path.hasPrefix("~") {
-            return URL(fileURLWithPath: FileManager.default.homeDirectoryForCurrentUser.path + path.dropFirst())
+            return URL(
+                fileURLWithPath: FileManager.default.homeDirectoryForCurrentUser.path
+                    + path.dropFirst()
+            )
         }
         return URL(fileURLWithPath: path)
     }
 }
 
-// MARK: - System audio SCStreamOutput helper
+// MARK: - Thread-safe once-flag for continuation safety
 
-/// Handles SCStream audio callbacks on a background queue.
+/// Ensures a CheckedContinuation is resumed exactly once even with concurrent callers.
+private final class AlreadyResumed: @unchecked Sendable {
+    private var done = false
+    private let lock = NSLock()
+    /// Returns true if this is the first call (caller should resume the continuation).
+    func markDone() -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        if done { return false }
+        done = true
+        return true
+    }
+}
+
+// MARK: - SCStreamOutput handler
+
+/// Receives audio sample buffers from SCStream on a dedicated background queue
+/// and writes them into an AVAssetWriter.
 private final class SystemAudioHandler: NSObject, SCStreamOutput {
     private let writer: AVAssetWriter
-    private let input: AVAssetWriterInput
-    private let queue: DispatchQueue
+    private let input:  AVAssetWriterInput
+    private let queue:  DispatchQueue
     private var started = false
-    private var onFirstSample: () -> Void
+    private let onFirstSample: () -> Void
 
-    init(writer: AVAssetWriter, input: AVAssetWriterInput, queue: DispatchQueue, onFirstSample: @escaping () -> Void) {
-        self.writer = writer
-        self.input  = input
-        self.queue  = queue
+    init(
+        writer: AVAssetWriter,
+        input:  AVAssetWriterInput,
+        queue:  DispatchQueue,
+        onFirstSample: @escaping () -> Void
+    ) {
+        self.writer        = writer
+        self.input         = input
+        self.queue         = queue
         self.onFirstSample = onFirstSample
     }
 
-    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+    func stream(
+        _ stream: SCStream,
+        didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
+        of type: SCStreamOutputType
+    ) {
         guard type == .audio else { return }
         guard CMSampleBufferDataIsReady(sampleBuffer) else { return }
 
