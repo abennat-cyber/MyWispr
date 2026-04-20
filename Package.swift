@@ -18,13 +18,15 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MyWispr",
+            exclude: ["Resources/Info.plist"],
             linkerSettings: [
                 .unsafeFlags([
                     "-Xlinker", "-sectcreate",
                     "-Xlinker", "__TEXT",
                     "-Xlinker", "__info_plist",
                     "-Xlinker", infoPlistPath
-                ])
+                ]),
+                .linkedFramework("ScreenCaptureKit"),
             ]
         )
     ]

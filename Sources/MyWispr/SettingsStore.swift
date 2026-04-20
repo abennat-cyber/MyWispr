@@ -4,12 +4,16 @@ import Foundation
 @MainActor
 final class SettingsStore: ObservableObject {
     @Published var settings: AppSettings {
-        didSet {
-            save()
-        }
+        didSet { save() }
+    }
+
+    /// API key is kept in the Keychain and never written to UserDefaults.
+    @Published var openAIAPIKey: String {
+        didSet { KeychainStore.save(key: keychainAPIKeyAccount, value: openAIAPIKey) }
     }
 
     private let userDefaultsKey = "com.abennat.mywispr.settings"
+    private let keychainAPIKeyAccount = "openAIAPIKey"
 
     init() {
         if
@@ -20,6 +24,7 @@ final class SettingsStore: ObservableObject {
         } else {
             settings = AppSettings()
         }
+        openAIAPIKey = KeychainStore.load(key: "openAIAPIKey")
     }
 
     private func save() {

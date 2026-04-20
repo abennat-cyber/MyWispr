@@ -5,6 +5,7 @@ enum RecordingError: Error, LocalizedError {
     case microphoneDenied
     case recorderCreationFailed
     case outputMissing
+    case directoryCreationFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -14,6 +15,8 @@ enum RecordingError: Error, LocalizedError {
             return "Unable to start the microphone recorder."
         case .outputMissing:
             return "The recording stopped without creating an audio file."
+        case .directoryCreationFailed(let path):
+            return "Could not create recordings directory at \(path)."
         }
     }
 }
@@ -23,15 +26,22 @@ final class AudioRecorder: NSObject, ObservableObject {
     private var recorder: AVAudioRecorder?
     private var outputURL: URL?
 
-    func startRecording() async throws {
+    func startRecording(in directory: String) async throws {
         let granted = await AVCaptureDevice.requestAccess(for: .audio)
         guard granted else {
             throw RecordingError.microphoneDenied
         }
 
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension("m4a")
+        let dir = resolvedURL(for: directory)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        } catch {
+            throw RecordingError.directoryCreationFailed(dir.path)
+        }
+
+        let filename = ISO8601DateFormatter().string(from: Date())
+            .replacingOccurrences(of: ":", with: "-")
+        let url = dir.appendingPathComponent(filename).appendingPathExtension("m4a")
 
         let config: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -61,5 +71,13 @@ final class AudioRecorder: NSObject, ObservableObject {
 
         self.outputURL = nil
         return outputURL
+    }
+
+    private func resolvedURL(for path: String) -> URL {
+        if path.hasPrefix("~") {
+            let expanded = FileManager.default.homeDirectoryForCurrentUser.path + path.dropFirst()
+            return URL(fileURLWithPath: expanded)
+        }
+        return URL(fileURLWithPath: path)
     }
 }

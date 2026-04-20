@@ -1,0 +1,14 @@
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/AppModel.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/AudioRecorder.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/HotkeyManager.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/InputInserter.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/KeychainStore.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/LocalWhisperService.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/MenuBarView.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/Models.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/MyWisprApp.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsStore.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsView.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/ShortcutRecorder.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/TranscriptionService.swift
+/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperAPIService.swift

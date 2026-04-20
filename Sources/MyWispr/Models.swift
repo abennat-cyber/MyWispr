@@ -19,17 +19,50 @@ enum RecordingMode: String, Codable, CaseIterable, Identifiable {
 }
 
 enum TranscriptionEngineKind: String, Codable, CaseIterable, Identifiable {
-    case codexCLI
+    case localWhisper
+    case whisperAPI
     case customCommand
 
     var id: Self { self }
 
     var title: String {
         switch self {
-        case .codexCLI:
-            return "Codex CLI"
+        case .localWhisper:
+            return "Local Whisper (whisper.cpp)"
+        case .whisperAPI:
+            return "OpenAI Whisper API"
         case .customCommand:
             return "Custom command"
+        }
+    }
+}
+
+enum RecordingRetention: String, Codable, CaseIterable, Identifiable {
+    case session   = "session"
+    case oneDay    = "1day"
+    case sevenDays = "7days"
+    case thirtyDays = "30days"
+    case forever   = "forever"
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .session:    return "Delete after transcription"
+        case .oneDay:     return "1 day"
+        case .sevenDays:  return "7 days"
+        case .thirtyDays: return "30 days"
+        case .forever:    return "Keep forever"
+        }
+    }
+
+    var maxAge: TimeInterval? {
+        switch self {
+        case .session:    return 0
+        case .oneDay:     return 86_400
+        case .sevenDays:  return 604_800
+        case .thirtyDays: return 2_592_000
+        case .forever:    return nil
         }
     }
 }
@@ -103,14 +136,87 @@ struct KeyboardShortcut: Codable, Equatable {
     }
 }
 
-struct AppSettings: Codable {
+enum LocalWhisperModel: String, Codable, CaseIterable, Identifiable {
+    case tiny    = "tiny"
+    case base    = "base"
+    case small   = "small"
+    case medium  = "medium"
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .tiny:   return "Tiny (~75 MB, fastest)"
+        case .base:   return "Base (~142 MB, fast)"
+        case .small:  return "Small (~466 MB, balanced)"
+        case .medium: return "Medium (~1.5 GB, accurate)"
+        }
+    }
+
+    var filename: String { "ggml-\(rawValue).bin" }
+
+    var downloadSize: String {
+        switch self {
+        case .tiny:   return "75 MB"
+        case .base:   return "142 MB"
+        case .small:  return "466 MB"
+        case .medium: return "1.5 GB"
+        }
+    }
+}
+
+struct AppSettings: Codable, Equatable {
     var shortcut: KeyboardShortcut = .default
     var recordingMode: RecordingMode = .toggle
-    var selectedEngine: TranscriptionEngineKind = .codexCLI
-    var codexModel: String = "gpt-5"
-    var codexCommandTemplate: String =
-        #"codex exec -m "{model}" "Transcribe the spoken content from the audio file at {audio_path}. Return only the transcript text.""#
+    var selectedEngine: TranscriptionEngineKind = .localWhisper
+    /// Ordered list of languages to detect (up to 5). Empty = auto-detect.
+    var transcriptionLanguages: [WhisperLanguage] = []
+    var recordingDirectory: String = "~/Library/Application Support/MyWispr/Recordings"
+    var recordingRetention: RecordingRetention = .session
+    var whisperModel: String = "whisper-1"
+    var localWhisperModel: LocalWhisperModel = .base
+    var localWhisperModelDir: String = "~/.local/share/whisper/models"
     var customCommandTemplate: String = ""
+    /// User-defined words/phrases passed to Whisper to improve recognition of
+    /// names, organization terms, and domain-specific vocabulary.
+    var customVocabulary: [String] = []
+
+    /// The single language code to pass to whisper-cli, or "auto".
+    /// whisper-cli only supports one language at a time; when multiple are
+    /// configured we use "auto" and rely on --prompt to bias detection.
+    var effectiveLanguageArg: String {
+        let langs = transcriptionLanguages.filter { $0 != .auto }
+        return langs.count == 1 ? langs[0].whisperCode : "auto"
+    }
+
+    /// A --prompt hint for multi-language detection.
+    private var languagePrompt: String? {
+        let langs = transcriptionLanguages.filter { $0 != .auto }
+        guard langs.count > 1 else { return nil }
+        let names = langs.map(\.displayName).joined(separator: ", ")
+        return "The audio may be in any of these languages: \(names)."
+    }
+
+    /// A --prompt suffix listing user-defined vocabulary words.
+    private var vocabularyPromptSuffix: String? {
+        let words = customVocabulary.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        guard !words.isEmpty else { return nil }
+        return "Custom vocabulary: \(words.joined(separator: ", "))."
+    }
+
+    /// Combined prompt passed to both whisper-cli (--prompt) and the Whisper
+    /// API (prompt field). Merges language hints and vocabulary hints.
+    var fullPrompt: String? {
+        let parts = [languagePrompt, vocabularyPromptSuffix].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " ")
+    }
+
+    /// Human-readable summary for display.
+    var languagesSummary: String {
+        let langs = transcriptionLanguages.filter { $0 != .auto }
+        if langs.isEmpty { return "Auto-detect" }
+        return langs.map(\.displayName).joined(separator: ", ")
+    }
 }
 
 enum AppStatus: Equatable {

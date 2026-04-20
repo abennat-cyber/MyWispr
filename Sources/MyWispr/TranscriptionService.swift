@@ -18,18 +18,33 @@ enum TranscriptionError: Error, LocalizedError {
 }
 
 struct TranscriptionService {
-    func transcribe(audioURL: URL, settings: AppSettings) async throws -> String {
-        let template: String
-        switch settings.selectedEngine {
-        case .codexCLI:
-            template = settings.codexCommandTemplate
-        case .customCommand:
-            template = settings.customCommandTemplate
-        }
+    private let whisperAPI = WhisperAPIService()
+    private let localWhisper = LocalWhisperService()
 
+    func transcribe(audioURL: URL, settings: AppSettings, openAIAPIKey: String) async throws -> String {
+        switch settings.selectedEngine {
+        case .localWhisper:
+            return try await localWhisper.transcribe(audioURL: audioURL, settings: settings)
+        case .whisperAPI:
+            return try await whisperAPI.transcribe(
+                audioURL: audioURL,
+                apiKey: openAIAPIKey,
+                model: settings.whisperModel,
+                languageArg: settings.effectiveLanguageArg,
+                prompt: settings.fullPrompt
+            )
+        case .customCommand:
+            // Template is user-supplied and intentionally executed as a shell command.
+            return try await runShellCommand(
+                template: settings.customCommandTemplate,
+                audioURL: audioURL
+            )
+        }
+    }
+
+    private func runShellCommand(template: String, audioURL: URL) async throws -> String {
         let command = template
             .replacingOccurrences(of: "{audio_path}", with: shellQuoted(audioURL.path))
-            .replacingOccurrences(of: "{model}", with: settings.codexModel)
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard !command.isEmpty else {
@@ -45,8 +60,7 @@ struct TranscriptionService {
         process.standardOutput = stdout
         process.standardError = stderr
 
-        try process.run()
-        process.waitUntilExit()
+        try await runProcess(process)
 
         let output = String(data: stdout.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
         let errors = String(data: stderr.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""

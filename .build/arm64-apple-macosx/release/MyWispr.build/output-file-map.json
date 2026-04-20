@@ -1,0 +1,121 @@
+{
+  "": {
+    "dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MyWispr.d",
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MyWispr.o",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/primary.swiftdeps"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AppModel.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AppModel.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AppModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AppModel.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AppModel.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AudioRecorder.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/HotkeyManager.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/InputInserter.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/InputInserter.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/InputInserter~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/InputInserter.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/InputInserter.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/KeychainStore.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/KeychainStore.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/KeychainStore~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/KeychainStore.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/KeychainStore.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/LanguagePickerView.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/LocalWhisperService.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MeetingRecorder.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MeetingRecorder.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MeetingRecorder~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MeetingRecorder.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MeetingRecorder.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MenuBarView.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MenuBarView.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MenuBarView~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MenuBarView.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MenuBarView.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/Models.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/Models.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/Models~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/Models.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/Models.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MyWisprApp.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MyWisprApp.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MyWisprApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MyWisprApp.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MyWisprApp.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/OnboardingView.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/OnboardingView.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/OnboardingView~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/OnboardingView.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/OnboardingView.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/ProcessRunner.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ProcessRunner.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ProcessRunner~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ProcessRunner.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ProcessRunner.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsStore.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsStore.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsStore~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsStore.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsStore.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsView.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsView.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsView~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsView.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/SettingsView.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/ShortcutRecorder.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ShortcutRecorder.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ShortcutRecorder~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ShortcutRecorder.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/ShortcutRecorder.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/TranscriptionService.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/TranscriptionService.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/TranscriptionService~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/TranscriptionService.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/TranscriptionService.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperAPIService.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperAPIService.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperAPIService~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperAPIService.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperAPIService.dia"
+  },
+  "/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperLanguage.swift": {
+    "object": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperLanguage.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperLanguage~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperLanguage.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperLanguage.dia"
+  }
+}

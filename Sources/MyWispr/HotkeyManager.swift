@@ -7,8 +7,8 @@ final class HotkeyManager: ObservableObject {
     var onShortcutPressed: (() -> Void)?
     var onShortcutReleased: (() -> Void)?
 
-    private var hotKeyRef: EventHotKeyRef?
-    private var eventHandler: EventHandlerRef?
+    nonisolated(unsafe) private var hotKeyRef: EventHotKeyRef?
+    nonisolated(unsafe) private var eventHandler: EventHandlerRef?
     private let hotKeyID = EventHotKeyID(signature: OSType(0x4D595750), id: 1)
 
     init(currentShortcut: KeyboardShortcut, settingsPublisher: Published<AppSettings>.Publisher) {
@@ -25,7 +25,9 @@ final class HotkeyManager: ObservableObject {
     }
 
     deinit {
-        unregister()
+        if let hotKeyRef {
+            UnregisterEventHotKey(hotKeyRef)
+        }
         if let eventHandler {
             RemoveEventHandler(eventHandler)
         }

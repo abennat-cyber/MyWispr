@@ -1,0 +1,486 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.MyWispr-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/sources",
+      "importPath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AppModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AudioRecorder.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/HotkeyManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/InputInserter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/KeychainStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/LocalWhisperService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MenuBarView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MyWisprApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/ShortcutRecorder.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/TranscriptionService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperAPIService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "MyWispr",
+      "moduleOutputPath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/Modules/MyWispr.swiftmodule",
+      "objects" : [
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/AppModel.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/AudioRecorder.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/HotkeyManager.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/InputInserter.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/KeychainStore.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/LocalWhisperService.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/MenuBarView.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/Models.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/MyWisprApp.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/SettingsStore.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/SettingsView.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/ShortcutRecorder.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/TranscriptionService.swift.o",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/WhisperAPIService.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j10",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "MyWispr_main",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "mywispr"
+      ],
+      "outputFileMapPath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/AppModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/AudioRecorder.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/HotkeyManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/InputInserter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/KeychainStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/LocalWhisperService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/MenuBarView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/MyWisprApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/SettingsStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/ShortcutRecorder.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/TranscriptionService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/WhisperAPIService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/Modules/MyWispr.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AppModel.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AudioRecorder.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/HotkeyManager.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/InputInserter.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/KeychainStore.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/LocalWhisperService.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MenuBarView.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/Models.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MyWisprApp.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsStore.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsView.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/ShortcutRecorder.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/TranscriptionService.swift",
+        "/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperAPIService.swift"
+      ],
+      "tempsPath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "MyWispr" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "MyWispr",
+      "-package-name",
+      "mywispr",
+      "-c",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AppModel.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AudioRecorder.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/HotkeyManager.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/InputInserter.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/KeychainStore.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/LocalWhisperService.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MenuBarView.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/Models.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MyWisprApp.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsStore.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsView.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/ShortcutRecorder.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/TranscriptionService.swift",
+      "/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperAPIService.swift",
+      "-I",
+      "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j10",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "MyWispr_main",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "mywispr",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "MyWispr" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr-entitlement.plist"
+    },
+    "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AppModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/AudioRecorder.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/HotkeyManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/InputInserter.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/KeychainStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/LocalWhisperService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MenuBarView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/Models.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/MyWisprApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsStore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/SettingsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/ShortcutRecorder.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/TranscriptionService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/Sources/MyWispr/WhisperAPIService.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/sources"
+    },
+    "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/AppModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/AudioRecorder.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/HotkeyManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/InputInserter.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/KeychainStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/LocalWhisperService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/MenuBarView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/Models.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/MyWisprApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/SettingsStore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/SettingsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/ShortcutRecorder.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/TranscriptionService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.build/WhisperAPIService.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/MyWispr.product/Objects.LinkFileList"
+    },
+    "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/abennat/Documents/MyWispr/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}
