@@ -4,6 +4,19 @@ A lightweight macOS menu bar app that transcribes your voice and instantly types
 
 ![MyWispr logo](MyWisprLogo.png)
 
+[![Download](https://img.shields.io/badge/Download-v0.1.0-blue?style=for-the-badge&logo=apple)](https://github.com/assafbennatan-stack/MyWispr/releases/download/v0.1.0/MyWispr-0.1.0.dmg)
+[![Release](https://img.shields.io/github/v/release/assafbennatan-stack/MyWispr?style=for-the-badge)](https://github.com/assafbennatan-stack/MyWispr/releases/latest)
+
+---
+
+## Download
+
+**[MyWispr-0.1.0.dmg](https://github.com/assafbennatan-stack/MyWispr/releases/download/v0.1.0/MyWispr-0.1.0.dmg)** — macOS 14+ · Apple Silicon
+
+1. Open the DMG
+2. Drag **MyWispr.app** to your **Applications** folder
+3. Right-click the app → **Open** (required on first launch because the app is not notarized)
+
 ---
 
 ## Features
