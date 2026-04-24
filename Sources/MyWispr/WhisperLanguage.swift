@@ -1,4 +1,5 @@
 import Foundation
+import MyWisprCore
 
 /// ISO 639-1 language codes supported by Whisper, plus an automatic detection option.
 /// Source: https://github.com/openai/whisper/blob/main/whisper/tokenizer.py
@@ -130,4 +131,13 @@ enum WhisperLanguage: String, Codable, CaseIterable, Identifiable {
     /// The value passed to whisper-cli --language and the Whisper API language field.
     /// Auto-detect passes "auto" to whisper-cli and omits the field from the API request.
     var whisperCode: String { rawValue }
+
+    var transcriptionScript: TranscriptionScript {
+        switch self {
+        case .hebrew:
+            return .hebrew
+        default:
+            return .latin
+        }
+    }
 }

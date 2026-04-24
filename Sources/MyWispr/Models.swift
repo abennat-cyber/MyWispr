@@ -1,6 +1,7 @@
 import AppKit
 import Carbon
 import Foundation
+import MyWisprCore
 
 enum RecordingMode: String, Codable, CaseIterable, Identifiable {
     case toggle
@@ -189,26 +190,42 @@ struct AppSettings: Codable, Equatable {
         return langs.count == 1 ? langs[0].whisperCode : "auto"
     }
 
-    /// A --prompt hint for multi-language detection.
-    private var languagePrompt: String? {
-        let langs = transcriptionLanguages.filter { $0 != .auto }
-        guard langs.count > 1 else { return nil }
-        let names = langs.map(\.displayName).joined(separator: ", ")
-        return "The audio may be in any of these languages: \(names)."
+    private var selectedTranscriptionLanguages: [WhisperLanguage] {
+        transcriptionLanguages.filter { $0 != .auto }
     }
 
-    /// A --prompt suffix listing user-defined vocabulary words.
-    private var vocabularyPromptSuffix: String? {
-        let words = customVocabulary.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-        guard !words.isEmpty else { return nil }
-        return "Custom vocabulary: \(words.joined(separator: ", "))."
+    private var selectedLanguageNames: [String] {
+        selectedTranscriptionLanguages.map(\.displayName)
+    }
+
+    private var selectedLanguageScripts: [TranscriptionScript] {
+        selectedTranscriptionLanguages.map(\.transcriptionScript)
+    }
+
+    var singleSelectedTranscriptionLanguage: WhisperLanguage? {
+        let langs = selectedTranscriptionLanguages
+        return langs.count == 1 ? langs[0] : nil
     }
 
     /// Combined prompt passed to both whisper-cli (--prompt) and the Whisper
     /// API (prompt field). Merges language hints and vocabulary hints.
     var fullPrompt: String? {
-        let parts = [languagePrompt, vocabularyPromptSuffix].compactMap { $0 }
-        return parts.isEmpty ? nil : parts.joined(separator: " ")
+        whisperAPIPrompt
+    }
+
+    var whisperAPIPrompt: String? {
+        TranscriptionPromptBuilder.apiPrompt(
+            languageNames: selectedLanguageNames,
+            vocabulary: customVocabulary
+        )
+    }
+
+    var localWhisperPrompt: String? {
+        TranscriptionPromptBuilder.localPrompt(
+            languageNames: selectedLanguageNames,
+            languageScripts: selectedLanguageScripts,
+            vocabulary: customVocabulary
+        )
     }
 
     /// Human-readable summary for display.

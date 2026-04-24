@@ -13,11 +13,16 @@ let package = Package(
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "MyWispr", targets: ["MyWispr"])
+        .executable(name: "MyWispr", targets: ["MyWispr"]),
+        .executable(name: "MyWisprBehaviorTests", targets: ["MyWisprBehaviorTests"]),
     ],
     targets: [
+        .target(
+            name: "MyWisprCore"
+        ),
         .executableTarget(
             name: "MyWispr",
+            dependencies: ["MyWisprCore"],
             exclude: ["Resources/Info.plist"],
             linkerSettings: [
                 .unsafeFlags([
@@ -28,6 +33,11 @@ let package = Package(
                 ]),
                 .linkedFramework("ScreenCaptureKit"),
             ]
+        ),
+        .executableTarget(
+            name: "MyWisprBehaviorTests",
+            dependencies: ["MyWisprCore"],
+            path: "Tests/MyWisprBehaviorTests"
         )
     ]
 )

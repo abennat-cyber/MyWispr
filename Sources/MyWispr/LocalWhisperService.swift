@@ -1,4 +1,5 @@
 import Foundation
+import MyWisprCore
 
 enum LocalWhisperError: Error, LocalizedError {
     case binaryNotFound(String)
@@ -73,6 +74,35 @@ struct LocalWhisperService {
         let wavURL = try await convertToWAV(audioURL)
         defer { try? FileManager.default.removeItem(at: wavURL) }
 
+        let transcript = try await runWhisper(
+            binaryPath: binaryPath,
+            modelPath: modelPath,
+            wavURL: wavURL,
+            settings: settings,
+            prompt: settings.localWhisperPrompt
+        )
+
+        if LocalTranscriptScriptValidator.shouldRetryWithoutPrompt(transcript, settings: settings),
+           settings.localWhisperPrompt != nil {
+            return try await runWhisper(
+                binaryPath: binaryPath,
+                modelPath: modelPath,
+                wavURL: wavURL,
+                settings: settings,
+                prompt: nil
+            )
+        }
+
+        return transcript
+    }
+
+    private func runWhisper(
+        binaryPath: String,
+        modelPath: String,
+        wavURL: URL,
+        settings: AppSettings,
+        prompt: String?
+    ) async throws -> String {
         var args = [
             "--model", modelPath,
             "--language", settings.effectiveLanguageArg,
@@ -81,7 +111,7 @@ struct LocalWhisperService {
             "--output-file", wavURL.deletingPathExtension().path,
         ]
         // Pass a combined prompt for multi-language biasing and/or custom vocabulary.
-        if let prompt = settings.fullPrompt {
+        if let prompt {
             args += ["--prompt", prompt]
         }
         args.append(wavURL.path)
@@ -162,5 +192,21 @@ struct LocalWhisperService {
         }
 
         return wavURL
+    }
+}
+
+enum LocalTranscriptScriptValidator {
+    static func shouldRetryWithoutPrompt(_ transcript: String, settings: AppSettings) -> Bool {
+        TranscriptScriptValidator.shouldRetryWithoutPrompt(
+            transcript,
+            expectedScript: settings.singleSelectedTranscriptionLanguage?.transcriptionScript
+        )
+    }
+
+    static func containsExpectedScript(_ transcript: String, settings: AppSettings) -> Bool {
+        TranscriptScriptValidator.containsExpectedScript(
+            transcript,
+            expectedScript: settings.singleSelectedTranscriptionLanguage?.transcriptionScript
+        )
     }
 }

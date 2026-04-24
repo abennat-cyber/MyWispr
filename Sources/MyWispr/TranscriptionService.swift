@@ -31,7 +31,7 @@ struct TranscriptionService {
                 apiKey: openAIAPIKey,
                 model: settings.whisperModel,
                 languageArg: settings.effectiveLanguageArg,
-                prompt: settings.fullPrompt
+                prompt: settings.whisperAPIPrompt
             )
         case .customCommand:
             // Template is user-supplied and intentionally executed as a shell command.
