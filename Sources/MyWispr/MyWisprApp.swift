@@ -41,7 +41,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     private var settingsStore: SettingsStore?
     private var model: AppModel?
-    private var windowObserver: NSObjectProtocol?
 
     static func installSharedObjects(settingsStore: SettingsStore, model: AppModel) {
         sharedObjects = (settingsStore, model)
@@ -69,7 +68,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             configureStatusItem(symbolName: "waveform.badge.mic")
         }
         showOnboardingIfNeeded()
-        observeUtilityWindows()
     }
 
     private func configureSharedObjects(settingsStore: SettingsStore, model: AppModel) {
@@ -97,9 +95,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 menuHostingController.rootView = rootView
             } else {
                 let hostingController = NSHostingController(rootView: rootView)
-                if #available(macOS 13.0, *) {
-                    hostingController.sizingOptions = [.minSize]
-                }
                 menuHostingController = hostingController
                 menuWindow.contentViewController = hostingController
             }
@@ -114,9 +109,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 meetingSetupHostingController.rootView = rootView
             } else {
                 let hostingController = NSHostingController(rootView: rootView)
-                if #available(macOS 13.0, *) {
-                    hostingController.sizingOptions = [.minSize]
-                }
                 meetingSetupHostingController = hostingController
                 meetingSetupWindow.contentViewController = hostingController
             }
@@ -132,9 +124,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 settingsHostingController.rootView = rootView
             } else {
                 let hostingController = NSHostingController(rootView: rootView)
-                if #available(macOS 13.0, *) {
-                    hostingController.sizingOptions = [.minSize]
-                }
                 settingsHostingController = hostingController
                 settingsWindow.contentViewController = hostingController
             }
@@ -206,10 +195,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         window.minSize = NSSize(width: 320, height: 360)
         configureUtilityDefaults(window)
-        if !window.setFrameUsingName("MyWisprMenuWindow") {
-            positionWindowNearStatusItem(window)
-        }
-        window.setFrameAutosaveName("MyWisprMenuWindow")
+        positionWindowNearStatusItem(window)
 
         menuWindow = window
         refreshHostedWindowContent()
@@ -255,10 +241,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         window.minSize = NSSize(width: 560, height: 520)
         configureUtilityDefaults(window)
-        if !window.setFrameUsingName("MyWisprSettingsWindow") {
-            window.center()
-        }
-        window.setFrameAutosaveName("MyWisprSettingsWindow")
+        window.center()
 
         settingsWindow = window
         refreshHostedWindowContent()
@@ -320,45 +303,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
 
         window.setFrame(targetFrame, display: true, animate: false)
-    }
-
-    private func observeUtilityWindows() {
-        let center = NotificationCenter.default
-        let mainQueue = OperationQueue.main
-
-        let handler: @Sendable (Notification) -> Void = { notification in
-            guard let window = notification.object as? NSWindow else { return }
-            Task { @MainActor in
-                Self.configureUtilityWindow(window)
-            }
-        }
-
-        windowObserver = center.addObserver(
-            forName: NSWindow.didBecomeKeyNotification,
-            object: nil,
-            queue: mainQueue,
-            using: handler
-        )
-    }
-
-    @MainActor
-    private static func configureUtilityWindow(_ window: NSWindow) {
-        let title = window.title
-        let identifier = window.identifier?.rawValue ?? ""
-        let isUtilityWindow = title == "MyWispr"
-            || title == "Settings"
-            || title == "Record Meeting"
-            || identifier == "com.apple.SwiftUI.Settings"
-        guard isUtilityWindow else { return }
-
-        if window.level != .floating {
-            window.level = .floating
-        }
-
-        let behavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        if !window.collectionBehavior.isSuperset(of: behavior) {
-            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        }
     }
 
     func windowWillClose(_ notification: Notification) {
