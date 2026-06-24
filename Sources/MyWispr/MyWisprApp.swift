@@ -67,7 +67,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else {
             configureStatusItem(symbolName: "waveform.badge.mic")
         }
-        showOnboardingIfNeeded()
     }
 
     private func configureSharedObjects(settingsStore: SettingsStore, model: AppModel) {
@@ -350,25 +349,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
 
-    private func showOnboardingIfNeeded() {
-        let done = UserDefaults.standard.bool(forKey: "onboardingComplete")
-        let whisperReady = LocalWhisperService.resolveBinaryPath() != nil
-        let modelReady = LocalWhisperService.mediumModelReady
-        guard !done || !whisperReady || !modelReady else { return }
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Setup"
-        window.center()
-        window.contentView = NSHostingView(rootView: OnboardingView())
-        window.isReleasedWhenClosed = false
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
 }
 
 @MainActor
@@ -388,9 +368,7 @@ struct MyWisprApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView()
-                .environmentObject(settingsStore)
-                .environmentObject(model)
+            EmptyView()
         }
     }
 }
