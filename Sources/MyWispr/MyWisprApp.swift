@@ -339,12 +339,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             queue: mainQueue,
             using: handler
         )
-        center.addObserver(
-            forName: NSWindow.didUpdateNotification,
-            object: nil,
-            queue: mainQueue,
-            using: handler
-        )
     }
 
     @MainActor
@@ -356,8 +350,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             || title == "Record Meeting"
             || identifier == "com.apple.SwiftUI.Settings"
         guard isUtilityWindow else { return }
-        DispatchQueue.main.async {
+
+        if window.level != .floating {
             window.level = .floating
+        }
+
+        let behavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        if !window.collectionBehavior.isSuperset(of: behavior) {
             window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         }
     }

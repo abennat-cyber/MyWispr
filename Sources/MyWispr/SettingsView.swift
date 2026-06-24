@@ -166,7 +166,6 @@ struct SettingsView: View {
             .onChange(of: settingsStore.openAIAPIKey) { _, _ in
                 settingsChanged = true
             }
-            .background(SettingsWindowConfigurator())
         } // end VStack
     }
 
@@ -544,35 +543,6 @@ struct SettingsView: View {
         panel.message = "Choose folder to save recordings"
         if panel.runModal() == .OK, let url = panel.url {
             settingsStore.settings.recordingDirectory = url.path
-        }
-    }
-}
-
-private struct SettingsWindowConfigurator: NSViewRepresentable {
-    func makeNSView(context: Context) -> SettingsWindowProbe {
-        SettingsWindowProbe()
-    }
-
-    func updateNSView(_ nsView: SettingsWindowProbe, context: Context) {
-        nsView.configureWindow()
-    }
-}
-
-private final class SettingsWindowProbe: NSView {
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        configureWindow()
-    }
-
-    func configureWindow() {
-        guard let window else { return }
-        DispatchQueue.main.async {
-            window.title = "MyWispr Settings"
-            window.level = .floating
-            window.hidesOnDeactivate = false
-            window.collectionBehavior.formUnion([.canJoinAllSpaces, .fullScreenAuxiliary])
-            window.orderFrontRegardless()
-            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }
