@@ -1,9 +1,11 @@
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AppModel.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioRecorder.swift
+/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioSilenceDetector.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/HotkeyManager.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/InputInserter.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/KeychainStore.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LanguagePickerView.swift
+/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalCalendarService.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalWhisperService.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/MeetingRecorder.swift
 /Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/MenuBarView.swift

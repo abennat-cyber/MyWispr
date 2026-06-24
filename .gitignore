@@ -35,6 +35,8 @@ MyWispr.app/
 *.dylib
 
 # Distribution packages (released via GitHub Releases)
+.dist/
+*.dmg
 
 # Instruments
 *.trace

@@ -32,6 +32,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioSilenceDetector.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/HotkeyManager.swift"
         },
         {
@@ -45,6 +49,10 @@
         {
           "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LanguagePickerView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalCalendarService.swift"
         },
         {
           "kind" : "file",
@@ -117,10 +125,12 @@
       "objects" : [
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AppModel.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.swift.o",
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/InputInserter.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/KeychainStore.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swift.o",
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MeetingRecorder.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MenuBarView.swift.o",
@@ -153,7 +163,6 @@
         "-entry-point-function-name",
         "-Xfrontend",
         "MyWispr_main",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-I",
@@ -188,6 +197,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swift.o"
         },
         {
@@ -201,6 +214,10 @@
         {
           "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.swift.o"
         },
         {
           "kind" : "file",
@@ -263,10 +280,12 @@
       "sources" : [
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AppModel.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioRecorder.swift",
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioSilenceDetector.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/HotkeyManager.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/InputInserter.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/KeychainStore.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LanguagePickerView.swift",
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalCalendarService.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalWhisperService.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/MeetingRecorder.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/MenuBarView.swift",
@@ -331,7 +350,6 @@
         "-Xfrontend",
         "MyWisprBehaviorTests_main",
         "-parse-as-library",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-I",
@@ -379,6 +397,26 @@
       "inputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/DictationOptimizationSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingArtifacts.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingAutofillSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingLiveTranscriptionSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptPostProcessing.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptionLanguageSupport.swift"
         },
         {
@@ -394,6 +432,11 @@
       "moduleName" : "MyWisprCore",
       "moduleOutputPath" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/Modules/MyWisprCore.swiftmodule",
       "objects" : [
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/DictationOptimizationSupport.swift.o",
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingArtifacts.swift.o",
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingAutofillSupport.swift.o",
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingLiveTranscriptionSupport.swift.o",
+        "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptPostProcessing.swift.o",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptionLanguageSupport.swift.o"
       ],
       "otherArguments" : [
@@ -414,7 +457,6 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/include/MyWisprCore-Swift.h",
-        "-color-diagnostics",
         "-swift-version",
         "6",
         "-I",
@@ -441,6 +483,26 @@
       "outputs" : [
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/DictationOptimizationSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingArtifacts.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingAutofillSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingLiveTranscriptionSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptPostProcessing.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptionLanguageSupport.swift.o"
         },
         {
@@ -450,6 +512,11 @@
       ],
       "prepareForIndexing" : false,
       "sources" : [
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/DictationOptimizationSupport.swift",
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingArtifacts.swift",
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingAutofillSupport.swift",
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingLiveTranscriptionSupport.swift",
+        "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptPostProcessing.swift",
         "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptionLanguageSupport.swift"
       ],
       "tempsPath" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build",
@@ -469,10 +536,12 @@
       "-c",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AppModel.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioRecorder.swift",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioSilenceDetector.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/HotkeyManager.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/InputInserter.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/KeychainStore.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LanguagePickerView.swift",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalCalendarService.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalWhisperService.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/MeetingRecorder.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/MenuBarView.swift",
@@ -505,7 +574,6 @@
       "-entry-point-function-name",
       "-Xfrontend",
       "MyWispr_main",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-I",
@@ -558,7 +626,6 @@
       "-Xfrontend",
       "MyWisprBehaviorTests_main",
       "-parse-as-library",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-I",
@@ -590,6 +657,11 @@
       "-package-name",
       "mywispr",
       "-c",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/DictationOptimizationSupport.swift",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingArtifacts.swift",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingAutofillSupport.swift",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingLiveTranscriptionSupport.swift",
+      "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptPostProcessing.swift",
       "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptionLanguageSupport.swift",
       "-I",
       "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/Modules",
@@ -610,7 +682,6 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/include/MyWisprCore-Swift.h",
-      "-color-diagnostics",
       "-swift-version",
       "6",
       "-I",
@@ -676,6 +747,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioSilenceDetector.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/HotkeyManager.swift"
         },
         {
@@ -689,6 +764,10 @@
         {
           "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LanguagePickerView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalCalendarService.swift"
         },
         {
           "kind" : "file",
@@ -762,6 +841,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swift.o"
         },
         {
@@ -775,6 +858,10 @@
         {
           "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.swift.o"
         },
         {
           "kind" : "file",
@@ -830,6 +917,26 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/DictationOptimizationSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingArtifacts.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingAutofillSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingLiveTranscriptionSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptPostProcessing.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptionLanguageSupport.swift.o"
         }
       ],
@@ -862,6 +969,26 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/DictationOptimizationSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingArtifacts.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingAutofillSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingLiveTranscriptionSupport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptPostProcessing.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptionLanguageSupport.swift.o"
         }
       ],
@@ -873,6 +1000,26 @@
         {
           "kind" : "virtual",
           "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/DictationOptimizationSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingArtifacts.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingAutofillSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/MeetingLiveTranscriptionSupport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWisprCore/TranscriptPostProcessing.swift"
         },
         {
           "kind" : "file",

@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import MyWisprCore
 
 enum RecordingError: Error, LocalizedError {
     case microphoneDenied
@@ -26,7 +27,7 @@ final class AudioRecorder: NSObject, ObservableObject {
     private var recorder: AVAudioRecorder?
     private var outputURL: URL?
 
-    func startRecording(in directory: String) async throws {
+    func startRecording(in directory: String, format: RecordingAudioFormat = .m4a) async throws {
         let granted = await AVCaptureDevice.requestAccess(for: .audio)
         guard granted else {
             throw RecordingError.microphoneDenied
@@ -41,14 +42,8 @@ final class AudioRecorder: NSObject, ObservableObject {
 
         let filename = ISO8601DateFormatter().string(from: Date())
             .replacingOccurrences(of: ":", with: "-")
-        let url = dir.appendingPathComponent(filename).appendingPathExtension("m4a")
-
-        let config: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44_100,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-        ]
+        let url = dir.appendingPathComponent(filename).appendingPathExtension(format.fileExtension)
+        let config = audioSettings(for: format)
 
         let recorder = try AVAudioRecorder(url: url, settings: config)
         recorder.prepareToRecord()
@@ -79,5 +74,26 @@ final class AudioRecorder: NSObject, ObservableObject {
             return URL(fileURLWithPath: expanded)
         }
         return URL(fileURLWithPath: path)
+    }
+
+    private func audioSettings(for format: RecordingAudioFormat) -> [String: Any] {
+        switch format {
+        case .m4a:
+            return [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: 44_100,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+        case .wav:
+            return [
+                AVFormatIDKey: Int(kAudioFormatLinearPCM),
+                AVSampleRateKey: 16_000,
+                AVNumberOfChannelsKey: 1,
+                AVLinearPCMBitDepthKey: 16,
+                AVLinearPCMIsFloatKey: false,
+                AVLinearPCMIsBigEndianKey: false
+            ]
+        }
     }
 }

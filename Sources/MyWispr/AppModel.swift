@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import MyWisprCore
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -8,12 +9,21 @@ final class AppModel: ObservableObject {
     @Published private(set) var lastTranscript: String = ""
 
     @Published private(set) var meetingStatus: MeetingStatus = .idle
+    @Published var meetingDraft = MeetingSessionDraft()
+    @Published var isMeetingSetupPresented = false
+    @Published private(set) var meetingContextLookupState: MeetingContextLookupState = .idle
+    @Published private(set) var activeMeetingSession: ActiveMeetingSession?
+    @Published private(set) var liveMeetingTranscript: String = ""
+    @Published private(set) var liveMeetingTranscriptionStatus: String = ""
+    @Published private(set) var calendarAccessState: CalendarAccessState = .notDetermined
+    @Published private(set) var availableCalendars: [CalendarSelection] = []
+    @Published private(set) var utilityWindowZoomScale: CGFloat = 1.0
 
-    enum MeetingStatus: Equatable {
+    enum MeetingStatus {
         case idle
-        case recording(String)   // filename being recorded
+        case recording
         case transcribing
-        case done(URL)           // URL of saved notes file
+        case done(URL)
         case failed(String)
     }
 
@@ -22,15 +32,28 @@ final class AppModel: ObservableObject {
     private let recorder = AudioRecorder()
     private let meetingRecorder = MeetingRecorder()
     private let transcriptionService = TranscriptionService()
+    private let audioSilenceDetector = AudioSilenceDetector()
     private let inputInserter = InputInserter()
     private let hotkeyManager: HotkeyManager
+    private let localCalendarAccessService: LocalCalendarAccessService
+    private let meetingContextProvider: MeetingContextProvider
     private var targetApplication: NSRunningApplication?
     private var isRecording = false
     private var isMeetingRecording = false
-    private var meetingAudioURL: URL?
+    private var liveMeetingTranscriptionTask: Task<Void, Never>?
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
+        let localCalendarAccessService = LocalCalendarAccessService()
+        self.localCalendarAccessService = localCalendarAccessService
+        self.meetingContextProvider = LocalCalendarMeetingContextProvider(
+            accessService: localCalendarAccessService,
+            selectedCalendarIdentifier: { [settingsStore] in
+                await MainActor.run {
+                    settingsStore.settings.selectedCalendarIdentifier
+                }
+            }
+        )
         self.hotkeyManager = HotkeyManager(
             currentShortcut: settingsStore.settings.shortcut,
             settingsPublisher: settingsStore.$settings
@@ -50,7 +73,12 @@ final class AppModel: ObservableObject {
 
         Task { @MainActor [weak self] in
             self?.purgeExpiredRecordings()
+            await self?.refreshCalendarAccessState()
         }
+    }
+
+    func adjustUtilityWindowZoom(by scale: CGFloat) {
+        utilityWindowZoomScale = min(max(utilityWindowZoomScale * scale, 0.75), 1.8)
     }
 
     func startRecording() async {
@@ -58,7 +86,8 @@ final class AppModel: ObservableObject {
         targetApplication = NSWorkspace.shared.frontmostApplication
 
         do {
-            try await recorder.startRecording(in: settingsStore.settings.recordingDirectory)
+            let format = settingsStore.settings.preferredDictationRecordingFormat
+            try await recorder.startRecording(in: settingsStore.settings.recordingDirectory, format: format)
             isRecording = true
             status = .recording
         } catch {
@@ -74,6 +103,13 @@ final class AppModel: ObservableObject {
         do {
             let audioURL = try recorder.stopRecording()
 
+            guard await audioSilenceDetector.hasSpeech(audioURL: audioURL) else {
+                applyRetentionPolicy(to: audioURL)
+                status = .silentTranscriptIgnored
+                scheduleStatusReset()
+                return
+            }
+
             let transcript = try await transcriptionService.transcribe(
                 audioURL: audioURL,
                 settings: settingsStore.settings,
@@ -81,6 +117,12 @@ final class AppModel: ObservableObject {
             )
 
             applyRetentionPolicy(to: audioURL)
+
+            guard TranscriptPostProcessor.shouldInsert(transcript) else {
+                status = .silentTranscriptIgnored
+                scheduleStatusReset()
+                return
+            }
 
             lastTranscript = transcript
             let insertionResult = await inputInserter.insert(transcript, targeting: targetApplication)
@@ -99,21 +141,75 @@ final class AppModel: ObservableObject {
 
     // MARK: - Meeting recording
 
+    func presentMeetingSetup() async {
+        guard !isMeetingRecording, !isRecording else { return }
+        isMeetingSetupPresented = true
+        meetingContextLookupState = .loading
+
+        let lookupState = await meetingContextProvider.fetchContext(
+            for: meetingDraft,
+            during: Date()
+        )
+        meetingContextLookupState = lookupState
+        await refreshCalendarAccessState()
+
+        if case .suggested(let suggestion) = lookupState {
+            if meetingDraft.trimmedTitle.isEmpty {
+                meetingDraft.title = suggestion.suggestedTitle ?? ""
+            }
+            meetingDraft.participants = suggestion.participants
+        }
+    }
+
+    func cancelMeetingSetup() {
+        isMeetingSetupPresented = false
+    }
+
+    func updateMeetingTitle(_ title: String) {
+        meetingDraft.title = title
+    }
+
+    func updateMeetingDraftNotes(_ notes: String) {
+        meetingDraft.personalNotes = notes
+    }
+
+    func updateActiveMeetingNotes(_ notes: String) {
+        meetingDraft.personalNotes = notes
+        activeMeetingSession?.personalNotes = notes
+    }
+
+    var canStartMeetingRecording: Bool {
+        !meetingDraft.trimmedTitle.isEmpty && !isMeetingRecording && !isRecording
+    }
+
     func startMeetingRecording() async {
         guard !isMeetingRecording, !isRecording else { return }
+        let draft = meetingDraft
+        let title = draft.trimmedTitle
+        guard !title.isEmpty else { return }
         do {
             let url = try await meetingRecorder.start(in: settingsStore.settings.recordingDirectory)
-            meetingAudioURL = url
+            let session = ActiveMeetingSession(
+                title: title,
+                participants: draft.participants,
+                personalNotes: draft.personalNotes,
+                recordingStartedAt: Date(),
+                audioURL: url
+            )
+            activeMeetingSession = session
             isMeetingRecording = true
-            meetingStatus = .recording(url.lastPathComponent)
+            meetingStatus = .recording
+            isMeetingSetupPresented = false
+            startLiveMeetingTranscription()
         } catch {
             meetingStatus = .failed(error.localizedDescription)
         }
     }
 
     func stopMeetingRecordingAndTranscribe() async {
-        guard isMeetingRecording else { return }
+        guard isMeetingRecording, let session = activeMeetingSession else { return }
         isMeetingRecording = false
+        stopLiveMeetingTranscription()
         meetingStatus = .transcribing
 
         do {
@@ -125,17 +221,33 @@ final class AppModel: ObservableObject {
                 openAIAPIKey: settingsStore.openAIAPIKey
             )
 
-            // Save notes as a .txt file next to the audio file
+            let endedAt = Date()
+            let bundle = RecordedMeetingBundle(
+                title: session.title,
+                participants: session.participants,
+                personalNotes: session.personalNotes,
+                personalNotesPriority: .higherThanTranscriptWhenConflictExists,
+                transcript: transcript,
+                recordingStartedAt: session.recordingStartedAt,
+                recordingEndedAt: endedAt,
+                audioFileName: audioURL.lastPathComponent,
+                audioFilePath: audioURL.path
+            )
+
+            let bundleURL = audioURL.deletingPathExtension().appendingPathExtension("json")
             let notesURL = audioURL.deletingPathExtension().appendingPathExtension("txt")
-            let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .long, timeStyle: .short)
-            let content = "Meeting Notes — \(dateStr)\n\n\(transcript)\n"
-            try content.write(to: notesURL, atomically: true, encoding: .utf8)
+            let jsonContent = try MeetingBundleFormatter.prettyJSONString(for: bundle)
+            let textContent = MeetingBundleFormatter.humanReadableSummary(for: bundle) + "\n"
+            try jsonContent.write(to: bundleURL, atomically: true, encoding: .utf8)
+            try textContent.write(to: notesURL, atomically: true, encoding: .utf8)
 
-            meetingAudioURL = nil
-            meetingStatus = .done(notesURL)
+            meetingStatus = .done(bundleURL)
+            activeMeetingSession = nil
+            meetingDraft = MeetingSessionDraft()
+            liveMeetingTranscriptionStatus = ""
+            meetingContextLookupState = .idle
 
-            // Reveal the notes file in Finder
-            NSWorkspace.shared.activateFileViewerSelecting([notesURL])
+            NSWorkspace.shared.activateFileViewerSelecting([bundleURL, notesURL])
 
         } catch {
             meetingStatus = .failed(error.localizedDescription)
@@ -144,6 +256,48 @@ final class AppModel: ObservableObject {
 
     func resetMeetingStatus() {
         meetingStatus = .idle
+        if !isMeetingRecording {
+            activeMeetingSession = nil
+            liveMeetingTranscript = ""
+            liveMeetingTranscriptionStatus = ""
+        }
+    }
+
+    var meetingTitle: String {
+        activeMeetingSession?.title ?? meetingDraft.trimmedTitle
+    }
+
+    var meetingNotes: String {
+        activeMeetingSession?.personalNotes ?? meetingDraft.personalNotes
+    }
+
+    var meetingParticipants: [MeetingParticipant] {
+        let sessionParticipants = activeMeetingSession?.participants ?? []
+        return sessionParticipants.isEmpty ? meetingDraft.participants : sessionParticipants
+    }
+
+    func requestCalendarAccess() async {
+        calendarAccessState = .requesting
+        calendarAccessState = await localCalendarAccessService.requestAccess()
+        await refreshAvailableCalendars()
+    }
+
+    func refreshCalendarAccessState() async {
+        calendarAccessState = await localCalendarAccessService.accessState()
+        await refreshAvailableCalendars()
+    }
+
+    func selectCalendar(_ calendarIdentifier: String) {
+        settingsStore.settings.selectedCalendarIdentifier = calendarIdentifier
+    }
+
+    func refreshAvailableCalendars() async {
+        availableCalendars = await localCalendarAccessService.availableCalendars()
+        let selected = settingsStore.settings.selectedCalendarIdentifier
+        if !selected.isEmpty,
+           !availableCalendars.contains(where: { $0.id == selected }) {
+            settingsStore.settings.selectedCalendarIdentifier = ""
+        }
     }
 
     // MARK: - Recording retention
@@ -159,13 +313,27 @@ final class AppModel: ObservableObject {
 
         let dir = resolvedRecordingDirectory()
         guard let files = try? FileManager.default.contentsOfDirectory(
-            at: dir, includingPropertiesForKeys: [.creationDateKey]
+            at: dir,
+            includingPropertiesForKeys: [.creationDateKey, .contentModificationDateKey, .isRegularFileKey],
+            options: [.skipsHiddenFiles]
         ) else { return }
 
-        let cutoff = Date().addingTimeInterval(-maxAge)
-        for file in files where file.pathExtension == "m4a" {
-            let created = (try? file.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? .distantFuture
-            if created < cutoff {
+        let now = Date()
+        for file in files {
+            let values = try? file.resourceValues(forKeys: [
+                .creationDateKey,
+                .contentModificationDateKey,
+                .isRegularFileKey
+            ])
+            guard values?.isRegularFile == true else { continue }
+
+            if RecordingRetentionPolicy.shouldPurge(
+                fileName: file.lastPathComponent,
+                creationDate: values?.creationDate,
+                contentModificationDate: values?.contentModificationDate,
+                now: now,
+                maxAge: maxAge
+            ) {
                 try? FileManager.default.removeItem(at: file)
             }
         }
@@ -186,6 +354,68 @@ final class AppModel: ObservableObject {
             try? await Task.sleep(for: .seconds(4))
             self?.resetStatus()
         }
+    }
+
+    private func startLiveMeetingTranscription() {
+        stopLiveMeetingTranscription()
+        liveMeetingTranscript = ""
+        liveMeetingTranscriptionStatus = "Live transcription starts after the first 10-second chunk."
+
+        liveMeetingTranscriptionTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            var chunkStart: TimeInterval = 0
+            let chunkDuration = MeetingLiveTranscriptionSupport.chunkDuration
+
+            while !Task.isCancelled && self.isMeetingRecording {
+                try? await Task.sleep(for: .seconds(chunkDuration))
+                guard !Task.isCancelled && self.isMeetingRecording else { break }
+
+                self.liveMeetingTranscriptionStatus = "Transcribing latest 10-second chunk…"
+
+                do {
+                    guard let chunkURL = try await self.meetingRecorder.exportMicChunk(
+                        startTime: chunkStart,
+                        duration: chunkDuration
+                    ) else {
+                        self.liveMeetingTranscriptionStatus = "Waiting for enough audio for the next chunk…"
+                        continue
+                    }
+                    chunkStart += chunkDuration
+
+                    defer { try? FileManager.default.removeItem(at: chunkURL) }
+
+                    guard await self.audioSilenceDetector.hasSpeech(audioURL: chunkURL) else {
+                        guard !Task.isCancelled && self.isMeetingRecording else { break }
+                        self.liveMeetingTranscriptionStatus = "Last chunk was silent."
+                        continue
+                    }
+
+                    let transcript = try await self.transcriptionService.transcribe(
+                        audioURL: chunkURL,
+                        settings: self.settingsStore.settings,
+                        openAIAPIKey: self.settingsStore.openAIAPIKey
+                    )
+                    guard !Task.isCancelled && self.isMeetingRecording else { break }
+
+                    if TranscriptPostProcessor.shouldInsert(transcript) {
+                        self.liveMeetingTranscript = MeetingLiveTranscriptionSupport.appendedTranscript(
+                            existing: self.liveMeetingTranscript,
+                            newText: transcript
+                        )
+                        self.liveMeetingTranscriptionStatus = "Live transcript updated."
+                    } else {
+                        self.liveMeetingTranscriptionStatus = "Last chunk did not contain usable speech."
+                    }
+                } catch {
+                    self.liveMeetingTranscriptionStatus = "Live transcription skipped a chunk: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func stopLiveMeetingTranscription() {
+        liveMeetingTranscriptionTask?.cancel()
+        liveMeetingTranscriptionTask = nil
     }
 
     private func handleShortcutPressed() async {

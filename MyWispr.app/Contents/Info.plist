@@ -14,17 +14,21 @@
     <string>MyWispr</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.4.1</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>5</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>
     <key>LSUIElement</key>
     <true/>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>MyWispr records short dictation clips to transcribe them into text.</string>
-    <key>NSScreenCaptureDescription</key>
-    <string>MyWispr captures system audio during meetings to produce transcribed meeting notes.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MyWispr records short dictation clips to transcribe them into text.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>MyWispr reads your local calendar events to autofill meeting titles and participants before recording starts.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>MyWispr reads your local calendar events to autofill meeting titles and participants before recording starts.</string>
+	<key>NSScreenCaptureDescription</key>
+	<string>MyWispr captures system audio during meetings to produce transcribed meeting notes.</string>
 </dict>
 </plist>

@@ -16,6 +16,12 @@
     "swift-dependencies": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.swiftdeps",
     "diagnostics": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.dia"
   },
+  "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/AudioSilenceDetector.swift": {
+    "object": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.dia"
+  },
   "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/HotkeyManager.swift": {
     "object": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swift.o",
     "swiftmodule": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager~partial.swiftmodule",
@@ -39,6 +45,12 @@
     "swiftmodule": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView~partial.swiftmodule",
     "swift-dependencies": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swiftdeps",
     "diagnostics": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.dia"
+  },
+  "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalCalendarService.swift": {
+    "object": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.swift.o",
+    "swiftmodule": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService~partial.swiftmodule",
+    "swift-dependencies": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.swiftdeps",
+    "diagnostics": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.dia"
   },
   "/Users/abennat/Documents/Projects/MyWispr/Sources/MyWispr/LocalWhisperService.swift": {
     "object": "/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService.swift.o",

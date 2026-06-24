@@ -137,31 +137,86 @@ struct KeyboardShortcut: Codable, Equatable {
     }
 }
 
-enum LocalWhisperModel: String, Codable, CaseIterable, Identifiable {
-    case tiny    = "tiny"
-    case base    = "base"
-    case small   = "small"
-    case medium  = "medium"
+struct LocalWhisperModel: Codable, CaseIterable, Equatable, Hashable, Identifiable {
+    let rawValue: String
 
-    var id: Self { self }
+    static let tiny = LocalWhisperModel(rawValue: "tiny")
+    static let tinyEnglish = LocalWhisperModel(rawValue: "tiny.en")
+    static let base = LocalWhisperModel(rawValue: "base")
+    static let baseEnglish = LocalWhisperModel(rawValue: "base.en")
+    static let small = LocalWhisperModel(rawValue: "small")
+    static let smallEnglish = LocalWhisperModel(rawValue: "small.en")
+    static let medium = LocalWhisperModel(rawValue: "medium")
+    static let mediumEnglish = LocalWhisperModel(rawValue: "medium.en")
+    static let large = LocalWhisperModel(rawValue: "large")
+    static let largeV1 = LocalWhisperModel(rawValue: "large-v1")
+    static let largeV2 = LocalWhisperModel(rawValue: "large-v2")
+    static let largeV3 = LocalWhisperModel(rawValue: "large-v3")
+    static let largeV3Turbo = LocalWhisperModel(rawValue: "large-v3-turbo")
+
+    static let allCases: [LocalWhisperModel] = [
+        .tiny, .tinyEnglish,
+        .base, .baseEnglish,
+        .small, .smallEnglish,
+        .medium, .mediumEnglish,
+        .large, .largeV1, .largeV2, .largeV3, .largeV3Turbo
+    ]
+
+    var id: String { rawValue }
+
+    init(rawValue: String) {
+        self.rawValue = rawValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        rawValue = try container.decode(String.self)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 
     var title: String {
-        switch self {
-        case .tiny:   return "Tiny (~75 MB, fastest)"
-        case .base:   return "Base (~142 MB, fast)"
-        case .small:  return "Small (~466 MB, balanced)"
-        case .medium: return "Medium (~1.5 GB, accurate)"
+        switch rawValue {
+        case Self.tiny.rawValue:          return "Tiny (~75 MB, fastest)"
+        case Self.tinyEnglish.rawValue:   return "Tiny English (~75 MB, fastest)"
+        case Self.base.rawValue:          return "Base (~142 MB, fast)"
+        case Self.baseEnglish.rawValue:   return "Base English (~142 MB, fast)"
+        case Self.small.rawValue:         return "Small (~466 MB, balanced)"
+        case Self.smallEnglish.rawValue:  return "Small English (~466 MB, balanced)"
+        case Self.medium.rawValue:        return "Medium (~1.5 GB, accurate)"
+        case Self.mediumEnglish.rawValue: return "Medium English (~1.5 GB, accurate)"
+        case Self.large.rawValue:         return "Large (~2.9 GB, most accurate)"
+        case Self.largeV1.rawValue:       return "Large v1 (~2.9 GB)"
+        case Self.largeV2.rawValue:       return "Large v2 (~2.9 GB)"
+        case Self.largeV3.rawValue:       return "Large v3 (~2.9 GB, most accurate)"
+        case Self.largeV3Turbo.rawValue:  return "Large v3 Turbo (~1.5 GB, faster)"
+        default:
+            return rawValue
+                .replacingOccurrences(of: "-", with: " ")
+                .replacingOccurrences(of: ".", with: " ")
+                .capitalized
         }
     }
 
     var filename: String { "ggml-\(rawValue).bin" }
 
     var downloadSize: String {
-        switch self {
-        case .tiny:   return "75 MB"
-        case .base:   return "142 MB"
-        case .small:  return "466 MB"
-        case .medium: return "1.5 GB"
+        switch rawValue {
+        case Self.tiny.rawValue, Self.tinyEnglish.rawValue:
+            return "75 MB"
+        case Self.base.rawValue, Self.baseEnglish.rawValue:
+            return "142 MB"
+        case Self.small.rawValue, Self.smallEnglish.rawValue:
+            return "466 MB"
+        case Self.medium.rawValue, Self.mediumEnglish.rawValue, Self.largeV3Turbo.rawValue:
+            return "1.5 GB"
+        case Self.large.rawValue, Self.largeV1.rawValue, Self.largeV2.rawValue, Self.largeV3.rawValue:
+            return "2.9 GB"
+        default:
+            return "unknown size"
         }
     }
 }
@@ -178,6 +233,7 @@ struct AppSettings: Codable, Equatable {
     var localWhisperModel: LocalWhisperModel = .base
     var localWhisperModelDir: String = "~/.local/share/whisper/models"
     var customCommandTemplate: String = ""
+    var selectedCalendarIdentifier: String = ""
     /// User-defined words/phrases passed to Whisper to improve recognition of
     /// names, organization terms, and domain-specific vocabulary.
     var customVocabulary: [String] = []
@@ -234,6 +290,10 @@ struct AppSettings: Codable, Equatable {
         if langs.isEmpty { return "Auto-detect" }
         return langs.map(\.displayName).joined(separator: ", ")
     }
+
+    var preferredDictationRecordingFormat: RecordingAudioFormat {
+        DictationRecordingFormatSelector.recordingFormat(forEngineRawValue: selectedEngine.rawValue)
+    }
 }
 
 enum AppStatus: Equatable {
@@ -257,6 +317,106 @@ enum AppStatus: Equatable {
             return "Error"
         }
     }
+}
+
+extension AppStatus {
+    static let silentTranscriptIgnored = AppStatus.succeeded("No speech detected.")
+}
+
+struct ActiveMeetingSession: Equatable {
+    var title: String
+    var participants: [MeetingParticipant]
+    var personalNotes: String
+    var recordingStartedAt: Date
+    var audioURL: URL
+}
+
+struct CalendarSelection: Equatable, Hashable, Identifiable, Sendable {
+    var id: String
+    var title: String
+    var sourceTitle: String
+
+    var displayTitle: String {
+        sourceTitle.isEmpty ? title : "\(title) - \(sourceTitle)"
+    }
+}
+
+enum CalendarAccessState: Equatable {
+    case notDetermined
+    case requesting
+    case granted
+    case denied(String)
+
+    var title: String {
+        switch self {
+        case .notDetermined:
+            return "Not granted"
+        case .requesting:
+            return "Requesting access…"
+        case .granted:
+            return "Granted"
+        case .denied:
+            return "Access denied"
+        }
+    }
+
+    var message: String? {
+        switch self {
+        case .denied(let message):
+            return message
+        case .notDetermined, .requesting, .granted:
+            return nil
+        }
+    }
+}
+
+struct MeetingContextSuggestion: Equatable {
+    var suggestedTitle: String?
+    var participants: [MeetingParticipant]
+    var calendarName: String?
+    var eventStart: Date?
+    var eventEnd: Date?
+}
+
+enum MeetingContextLookupState: Equatable {
+    case idle
+    case loading
+    case suggested(MeetingContextSuggestion)
+    case unavailable(String)
+
+    var participants: [MeetingParticipant] {
+        switch self {
+        case .suggested(let suggestion):
+            return suggestion.participants
+        case .idle, .loading, .unavailable:
+            return []
+        }
+    }
+
+    var message: String? {
+        switch self {
+        case .idle:
+            return nil
+        case .loading:
+            return "Looking up Apple Calendar event…"
+        case .suggested(let suggestion):
+            if let calendarName = suggestion.calendarName,
+               let title = suggestion.suggestedTitle,
+               !title.isEmpty {
+                return "Autofilled from \(calendarName): \(title)"
+            }
+            if let calendarName = suggestion.calendarName {
+                return "Participants autofilled from \(calendarName)"
+            }
+            return nil
+        case .unavailable(let message):
+            return message
+        }
+    }
+}
+
+protocol MeetingContextProvider: Sendable {
+    func fetchContext(for draft: MeetingSessionDraft, during date: Date) async -> MeetingContextLookupState
 }
 
 enum InsertionResult: Equatable {

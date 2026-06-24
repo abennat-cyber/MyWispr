@@ -2,14 +2,20 @@ import AppKit
 import ApplicationServices
 import Carbon
 import Foundation
+import MyWisprCore
 
 @MainActor
 final class InputInserter {
     func insert(_ text: String, targeting app: NSRunningApplication?) async -> InsertionResult {
         _ = app?.activate(options: [])
-        try? await Task.sleep(for: .milliseconds(150))
+        await waitForTargetActivation(app)
 
-        let textToInsert = prependSpaceIfNeeded(applyBidiIfNeeded(text))
+        let textToInsert = applyBidiIfNeeded(
+            InsertionTextFormatter.formattedTranscript(
+                text,
+                context: focusedTextContext()
+            )
+        )
 
         if AXIsProcessTrusted(), type(textToInsert) {
             return .typed
@@ -23,6 +29,23 @@ final class InputInserter {
         }
 
         return .clipboardOnly
+    }
+
+    private func waitForTargetActivation(_ app: NSRunningApplication?) async {
+        guard let app else { return }
+
+        let maxMilliseconds = 150
+        let stepMilliseconds = 15
+        var elapsedMilliseconds = 0
+
+        while ActivationWaitPolicy.shouldKeepWaiting(
+            elapsedMilliseconds: elapsedMilliseconds,
+            maxMilliseconds: maxMilliseconds,
+            targetIsFrontmost: app.isActive
+        ) {
+            try? await Task.sleep(for: .milliseconds(stepMilliseconds))
+            elapsedMilliseconds += stepMilliseconds
+        }
     }
 
     // Detects whether the text is predominantly RTL (e.g. Hebrew, Arabic) and,
@@ -64,47 +87,44 @@ final class InputInserter {
             || (v >= 0x00C0 && v <= 0x024F)   // Latin Extended
     }
 
-    // Checks the focused element's selected text range via AX to determine
-    // whether the character immediately before the cursor is a non-space.
-    // If so, prepends a space so dictation doesn't run into existing text.
-    private func prependSpaceIfNeeded(_ text: String) -> String {
-        guard AXIsProcessTrusted() else { return text }
+    private func focusedTextContext() -> InsertionTextContext {
+        guard AXIsProcessTrusted() else { return InsertionTextContext() }
 
         let systemWide = AXUIElementCreateSystemWide()
         var focusedElement: AnyObject?
         guard AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success,
-              let element = focusedElement else { return text }
+              let element = focusedElement else { return InsertionTextContext() }
 
         var rangeValue: AnyObject?
         guard AXUIElementCopyAttributeValue(element as! AXUIElement, kAXSelectedTextRangeAttribute as CFString, &rangeValue) == .success,
-              let cfRange = rangeValue else { return text }
+              let cfRange = rangeValue else { return InsertionTextContext() }
 
         var range = CFRange()
         AXValueGetValue(cfRange as! AXValue, .cfRange, &range)
 
-        // If cursor is at position 0 there's nothing before it
-        guard range.location > 0 else { return text }
+        return InsertionTextContext(
+            previousCharacter: character(at: range.location - 1, in: element as! AXUIElement),
+            nextCharacter: character(at: range.location + range.length, in: element as! AXUIElement)
+        )
+    }
 
-        // Read the character just before the cursor
-        var beforeRange = CFRangeMake(range.location - 1, 1)
-        guard let axRange = AXValueCreate(.cfRange, &beforeRange) else { return text }
+    private func character(at location: CFIndex, in element: AXUIElement) -> Character? {
+        guard location >= 0 else { return nil }
 
-        var charValue: AnyObject?
+        var requestedRange = CFRangeMake(location, 1)
+        guard let axRange = AXValueCreate(.cfRange, &requestedRange) else { return nil }
+
+        var characterValue: AnyObject?
         guard AXUIElementCopyParameterizedAttributeValue(
-            element as! AXUIElement,
+            element,
             kAXStringForRangeParameterizedAttribute as CFString,
             axRange,
-            &charValue
+            &characterValue
         ) == .success,
-              let char = charValue as? String,
-              !char.isEmpty else { return text }
+              let string = characterValue as? String,
+              let character = string.first else { return nil }
 
-        // Only prepend a space if the preceding character is not whitespace
-        let precedingChar = Character(char)
-        if !precedingChar.isWhitespace {
-            return " " + text
-        }
-        return text
+        return character
     }
 
     private func type(_ text: String) -> Bool {

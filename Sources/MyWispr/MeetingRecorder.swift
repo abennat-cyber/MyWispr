@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import MyWisprCore
 import ScreenCaptureKit
 
 /// Records microphone and system audio (speakers/apps) simultaneously.
@@ -29,12 +30,14 @@ final class MeetingRecorder: NSObject {
 
     enum MeetingError: Error, LocalizedError {
         case notRecording
+        case microphoneDenied
         case mixFailed(String)
         case setupFailed(String)
 
         var errorDescription: String? {
             switch self {
             case .notRecording:      return "Meeting recording is not active."
+            case .microphoneDenied:  return "Microphone access was denied."
             case .mixFailed(let m):  return "Failed to mix audio: \(m)"
             case .setupFailed(let m): return "Meeting recorder setup failed: \(m)"
             }
@@ -44,6 +47,14 @@ final class MeetingRecorder: NSObject {
     // MARK: - Public API
 
     func start(in directory: String) async throws -> URL {
+        let granted = await AVCaptureDevice.requestAccess(for: .audio)
+        guard granted else { throw MeetingError.microphoneDenied }
+
+        guard Self.canCaptureSystemAudio else {
+            _ = CGRequestScreenCaptureAccess()
+            throw MeetingError.setupFailed(Self.systemAudioPermissionMessage)
+        }
+
         let dir = resolve(directory)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
@@ -52,8 +63,22 @@ final class MeetingRecorder: NSObject {
         let dest = dir.appendingPathComponent("Meeting-\(ts).m4a")
         outputURL = dest
 
-        try startMic()
-        await startSystemAudio()   // best-effort; proceeds mic-only if SCK permission denied
+        do {
+            try startMic()
+            try await startSystemAudio()
+        } catch {
+            micRecorder?.stop()
+            micRecorder = nil
+            [micTempURL, systemTempURL].compactMap { $0 }.forEach { try? FileManager.default.removeItem(at: $0) }
+            micTempURL = nil
+            systemTempURL = nil
+            outputURL = nil
+            systemAudioHandler = nil
+            systemWriter = nil
+            systemInput = nil
+            systemWriterStarted = false
+            throw error
+        }
 
         return dest
     }
@@ -73,10 +98,10 @@ final class MeetingRecorder: NSObject {
         // with a 5-second safety timeout to prevent the app hanging.
         await withCheckedContinuation { (cont: CheckedContinuation<Void, Never>) in
             let alreadyResumed = AlreadyResumed()
-            let timeout = DispatchWorkItem {
+            let timeout = Task {
+                try? await Task.sleep(for: .seconds(5))
                 if alreadyResumed.markDone() { cont.resume() }
             }
-            DispatchQueue.global().asyncAfter(deadline: .now() + 5, execute: timeout)
 
             systemQueue.async { [weak self] in
                 guard let self else {
@@ -117,6 +142,38 @@ final class MeetingRecorder: NSObject {
         return dest
     }
 
+    func exportMicChunk(startTime: TimeInterval, duration: TimeInterval) async throws -> URL? {
+        guard let micURL = micTempURL, let micRecorder else { throw MeetingError.notRecording }
+
+        guard MeetingLiveTranscriptionSupport.isChunkReady(
+            elapsed: micRecorder.currentTime,
+            start: startTime,
+            duration: duration
+        ) else {
+            return nil
+        }
+
+        let chunkURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString + "-meeting-live-chunk.m4a")
+        let asset = AVURLAsset(url: micURL)
+        guard let exporter = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
+            throw MeetingError.mixFailed("AVAssetExportSession unavailable.")
+        }
+
+        let start = CMTime(seconds: startTime, preferredTimescale: 600)
+        let chunkDuration = CMTime(seconds: duration, preferredTimescale: 600)
+        exporter.outputURL = chunkURL
+        exporter.outputFileType = .m4a
+        exporter.timeRange = CMTimeRange(start: start, duration: chunkDuration)
+
+        await exporter.export()
+        if let error = exporter.error {
+            try? FileManager.default.removeItem(at: chunkURL)
+            throw MeetingError.mixFailed(error.localizedDescription)
+        }
+        return chunkURL
+    }
+
     // MARK: - Mic
 
     private func startMic() throws {
@@ -137,12 +194,17 @@ final class MeetingRecorder: NSObject {
 
     // MARK: - System audio (ScreenCaptureKit)
 
-    private func startSystemAudio() async {
+    private func startSystemAudio() async throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString + "-system.m4a")
         systemTempURL = url
 
-        guard let writer = try? AVAssetWriter(outputURL: url, fileType: .m4a) else { return }
+        let writer: AVAssetWriter
+        do {
+            writer = try AVAssetWriter(outputURL: url, fileType: .m4a)
+        } catch {
+            throw MeetingError.setupFailed("Could not create system audio writer: \(error.localizedDescription)")
+        }
 
         let audioSettings: [String: Any] = [
             AVFormatIDKey:          Int(kAudioFormatMPEG4AAC),
@@ -152,6 +214,9 @@ final class MeetingRecorder: NSObject {
         ]
         let input = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
         input.expectsMediaDataInRealTime = true
+        guard writer.canAdd(input) else {
+            throw MeetingError.setupFailed("Could not attach the system audio writer input.")
+        }
         writer.add(input)
 
         systemWriter = writer
@@ -161,7 +226,9 @@ final class MeetingRecorder: NSObject {
             let content = try await SCShareableContent.excludingDesktopWindows(
                 false, onScreenWindowsOnly: false
             )
-            guard let display = content.displays.first else { return }
+            guard let display = content.displays.first else {
+                throw MeetingError.setupFailed("No display is available for system audio capture.")
+            }
 
             let filter = SCContentFilter(
                 display: display,
@@ -201,12 +268,26 @@ final class MeetingRecorder: NSObject {
             isCapturingSystem = true
 
         } catch {
-            // Permission not granted or no display — fall back to mic only.
             systemTempURL    = nil
             systemWriter     = nil
             systemInput      = nil
             systemAudioHandler = nil
+            throw MeetingError.setupFailed(systemAudioSetupMessage(for: error))
         }
+    }
+
+    private static var canCaptureSystemAudio: Bool {
+        CGPreflightScreenCaptureAccess()
+    }
+
+    private static let systemAudioPermissionMessage =
+        "Screen Recording permission is required to capture the default output device. Grant it in System Settings → Privacy & Security → Screen & System Audio Recording, then restart MyWispr."
+
+    private func systemAudioSetupMessage(for error: Error) -> String {
+        if !Self.canCaptureSystemAudio {
+            return Self.systemAudioPermissionMessage
+        }
+        return "Could not start default output capture: \(error.localizedDescription)"
     }
 
     // MARK: - Mixing

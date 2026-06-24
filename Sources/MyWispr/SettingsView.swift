@@ -1,5 +1,7 @@
 import AVFoundation
 import ApplicationServices
+import AppKit
+import EventKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -7,6 +9,7 @@ struct SettingsView: View {
     @EnvironmentObject private var settingsStore: SettingsStore
 
     @State private var micPermission: AVAuthorizationStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+    @State private var screenCapturePermission: Bool = CGPreflightScreenCaptureAccess()
     @State private var accessibilityTrusted: Bool = AXIsProcessTrusted()
     @State private var apiKeyVisible: Bool = false
     @State private var showLanguagePicker: Bool = false
@@ -97,6 +100,10 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Calendar") {
+                calendarSection
+            }
+
             Section("Dictionary") {
                 dictionarySection
             }
@@ -112,6 +119,16 @@ struct SettingsView: View {
                             : "Denied — open System Settings → Privacy & Security → Microphone",
                     buttonTitle: micPermission == .notDetermined ? "Request" : nil,
                     action: requestMicPermission
+                )
+
+                permissionRow(
+                    label: "System audio",
+                    granted: screenCapturePermission,
+                    description: screenCapturePermission
+                        ? "Granted — meeting recording can capture the default output device"
+                        : "Required for meeting recording — grant Screen & System Audio Recording access, then restart MyWispr",
+                    buttonTitle: screenCapturePermission ? nil : "Request",
+                    action: requestScreenCapturePermission
                 )
 
                 permissionRow(
@@ -140,6 +157,7 @@ struct SettingsView: View {
             .frame(width: 560)
             .onAppear {
                 micPermission = AVCaptureDevice.authorizationStatus(for: .audio)
+                screenCapturePermission = CGPreflightScreenCaptureAccess()
                 accessibilityTrusted = AXIsProcessTrusted()
             }
             .onChange(of: settingsStore.settings) { _, _ in
@@ -291,6 +309,67 @@ struct SettingsView: View {
     // MARK: - Engine fields
 
     @ViewBuilder
+    private var calendarSection: some View {
+        if model.calendarAccessState == .granted {
+            Picker(
+                "Calendar",
+                selection: Binding(
+                    get: { settingsStore.settings.selectedCalendarIdentifier },
+                    set: { model.selectCalendar($0) }
+                )
+            ) {
+                Text("All calendars").tag("")
+                ForEach(model.availableCalendars) { calendar in
+                    Text(calendar.displayTitle).tag(calendar.id)
+                }
+            }
+            .pickerStyle(.menu)
+
+            Text("Choose the Apple Calendar source MyWispr should use for meeting autofill. Select the Google calendar account that contains your meetings.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(model.calendarAccessState.title)
+                    .fontWeight(.medium)
+                if case .denied(let message) = model.calendarAccessState {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("MyWispr reads meetings from the local Apple Calendar store, including Google calendars synced to the Calendar app.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            switch model.calendarAccessState {
+            case .requesting:
+                ProgressView()
+                    .controlSize(.small)
+            case .granted:
+                Button("Refresh") {
+                    Task {
+                        await model.refreshCalendarAccessState()
+                        await model.refreshAvailableCalendars()
+                    }
+                }
+                .buttonStyle(.borderless)
+            case .notDetermined, .denied:
+                Button("Grant Access") {
+                    Task { await model.requestCalendarAccess() }
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+    }
+
+    @ViewBuilder
     private var localWhisperFields: some View {
         let binaryFound = LocalWhisperService.resolveBinaryPath() != nil
         let modelPath = LocalWhisperService.resolveModelPath(
@@ -298,6 +377,10 @@ struct SettingsView: View {
             modelDir: settingsStore.settings.localWhisperModelDir
         )
         let modelFound = FileManager.default.fileExists(atPath: modelPath)
+        let availableModels = LocalWhisperService.availableModels(in: settingsStore.settings.localWhisperModelDir)
+        let displayedModels = availableModels.contains(settingsStore.settings.localWhisperModel)
+            ? availableModels
+            : [settingsStore.settings.localWhisperModel] + availableModels
 
         if !binaryFound {
             VStack(alignment: .leading, spacing: 6) {
@@ -321,7 +404,7 @@ struct SettingsView: View {
         }
 
         Picker("Model size", selection: $settingsStore.settings.localWhisperModel) {
-            ForEach(LocalWhisperModel.allCases) { m in
+            ForEach(displayedModels) { m in
                 Text(m.title).tag(m)
             }
         }
@@ -432,8 +515,20 @@ struct SettingsView: View {
         }
     }
 
+    private func requestScreenCapturePermission() {
+        screenCapturePermission = CGRequestScreenCaptureAccess()
+        if !screenCapturePermission {
+            openScreenCaptureSettings()
+        }
+    }
+
     private func openAccessibilitySettings() {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!
+        NSWorkspace.shared.open(url)
+    }
+
+    private func openScreenCaptureSettings() {
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
         NSWorkspace.shared.open(url)
     }
 

@@ -34,10 +34,30 @@ struct LocalWhisperService {
     }
 
     static func resolveModelPath(model: LocalWhisperModel, modelDir: String) -> String {
-        let expanded = modelDir.hasPrefix("~")
+        let expanded = expandModelDir(modelDir)
+        return (expanded as NSString).appendingPathComponent(model.filename)
+    }
+
+    static func availableModels(in modelDir: String) -> [LocalWhisperModel] {
+        let knownModels = LocalWhisperModel.allCases
+        let knownValues = Set(knownModels.map(\.rawValue))
+        let expandedDir = expandModelDir(modelDir)
+        let discoveredModels = ((try? FileManager.default.contentsOfDirectory(atPath: expandedDir)) ?? [])
+            .compactMap { filename -> LocalWhisperModel? in
+                guard filename.hasPrefix("ggml-"), filename.hasSuffix(".bin") else { return nil }
+                let rawValue = String(filename.dropFirst("ggml-".count).dropLast(".bin".count))
+                guard !rawValue.isEmpty, !knownValues.contains(rawValue) else { return nil }
+                return LocalWhisperModel(rawValue: rawValue)
+            }
+            .sorted { $0.rawValue.localizedStandardCompare($1.rawValue) == .orderedAscending }
+
+        return knownModels + discoveredModels
+    }
+
+    private static func expandModelDir(_ modelDir: String) -> String {
+        modelDir.hasPrefix("~")
             ? FileManager.default.homeDirectoryForCurrentUser.path + modelDir.dropFirst()
             : modelDir
-        return (expanded as NSString).appendingPathComponent(model.filename)
     }
 
     /// Default model directory used across the app.
@@ -70,9 +90,12 @@ struct LocalWhisperService {
             )
         }
 
-        // whisper-cli only accepts flac/mp3/ogg/wav — convert m4a → wav first
-        let wavURL = try await convertToWAV(audioURL)
-        defer { try? FileManager.default.removeItem(at: wavURL) }
+        let (wavURL, shouldRemoveWAV) = try await preparedWAVInput(for: audioURL)
+        defer {
+            if shouldRemoveWAV {
+                try? FileManager.default.removeItem(at: wavURL)
+            }
+        }
 
         let transcript = try await runWhisper(
             binaryPath: binaryPath,
@@ -164,8 +187,15 @@ struct LocalWhisperService {
         return lines.joined(separator: " ")
     }
 
-    // Uses afconvert (built-in macOS) to convert m4a → 16kHz mono WAV,
-    // which is what whisper models expect.
+    private func preparedWAVInput(for audioURL: URL) async throws -> (url: URL, shouldRemove: Bool) {
+        guard LocalWhisperConversionPolicy.requiresConversion(fileExtension: audioURL.pathExtension) else {
+            return (audioURL, false)
+        }
+
+        return (try await convertToWAV(audioURL), true)
+    }
+
+    // Uses afconvert (built-in macOS) to convert non-WAV inputs to 16 kHz mono WAV.
     private func convertToWAV(_ inputURL: URL) async throws -> URL {
         let wavURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)

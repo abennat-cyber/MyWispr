@@ -1,12 +1,14 @@
 import SwiftUI
+import MyWisprCore
 
 struct MenuBarView: View {
-    @Environment(\.openSettings) private var openSettings
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var settingsStore: SettingsStore
 
     @State private var recordingSeconds: Int = 0
+    @State private var meetingRecordingSeconds: Int = 0
     @State private var timerTask: Task<Void, Never>?
+    @State private var meetingTimerTask: Task<Void, Never>?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -24,18 +26,23 @@ struct MenuBarView: View {
             Divider()
 
             meetingSection
+                .layoutPriority(1)
 
             Divider()
 
             actionButtons
         }
         .padding(14)
-        .frame(width: 300)
+        .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: model.status) { _, newStatus in
             handleStatusChange(newStatus)
         }
+        .onChange(of: meetingStatusKey) { _, newStatus in
+            handleMeetingStatusChange(newStatus)
+        }
         .onDisappear {
             timerTask?.cancel()
+            meetingTimerTask?.cancel()
         }
     }
 
@@ -43,10 +50,10 @@ struct MenuBarView: View {
     private var header: some View {
         HStack {
             Text("MyWispr")
-                .font(.headline)
+                .font(scaledFont(17, weight: .semibold))
             Spacer()
             Text(settingsStore.settings.shortcut.displayText)
-                .font(.caption)
+                .font(scaledFont(11))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -60,26 +67,27 @@ struct MenuBarView: View {
             statusIndicator
             VStack(alignment: .leading, spacing: 2) {
                 Text(model.status.title)
+                    .font(scaledFont(13))
                     .fontWeight(.medium)
 
                 if model.status == .recording {
                     Text(formattedDuration)
-                        .font(.caption)
+                        .font(scaledFont(12))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 } else if case .failed(let message) = model.status {
                     Text(message)
-                        .font(.caption)
+                        .font(scaledFont(12))
                         .foregroundStyle(.red)
                         .fixedSize(horizontal: false, vertical: true)
                 } else if case .succeeded(let message) = model.status {
                     Text(message)
-                        .font(.caption)
+                        .font(scaledFont(12))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text(settingsStore.settings.recordingMode.title)
-                        .font(.caption)
+                        .font(scaledFont(12))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -121,11 +129,11 @@ struct MenuBarView: View {
     private var lastTranscriptSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Last transcript")
-                .font(.caption)
+                .font(scaledFont(12))
                 .foregroundStyle(.secondary)
             ScrollView {
                 Text(model.lastTranscript)
-                    .font(.caption)
+                    .font(scaledFont(12))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
@@ -142,12 +150,16 @@ struct MenuBarView: View {
                 meetingStatusIndicator
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Record Meeting")
-                        .font(.subheadline)
+                        .font(scaledFont(13))
                         .fontWeight(.medium)
                     meetingStatusLabel
                 }
                 Spacer()
                 meetingButton
+            }
+
+            if case .recording = model.meetingStatus {
+                MeetingNotesEditorView(model: model, durationText: formattedMeetingDuration)
             }
         }
     }
@@ -181,27 +193,27 @@ struct MenuBarView: View {
         switch model.meetingStatus {
         case .idle:
             Text("Mic + system audio")
-                .font(.caption)
+                .font(scaledFont(12))
                 .foregroundStyle(.secondary)
-        case .recording(let name):
-            Text(name)
-                .font(.caption)
+        case .recording:
+            Text(model.meetingTitle.isEmpty ? "Recording meeting…" : model.meetingTitle)
+                .font(scaledFont(12))
                 .foregroundStyle(.orange)
                 .lineLimit(1)
                 .truncationMode(.middle)
         case .transcribing:
             Text("Transcribing meeting…")
-                .font(.caption)
+                .font(scaledFont(12))
                 .foregroundStyle(.secondary)
         case .done(let url):
             Text("Notes saved — \(url.lastPathComponent)")
-                .font(.caption)
+                .font(scaledFont(12))
                 .foregroundStyle(.green)
                 .lineLimit(1)
                 .truncationMode(.middle)
         case .failed(let msg):
             Text(msg)
-                .font(.caption)
+                .font(scaledFont(12))
                 .foregroundStyle(.red)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -229,7 +241,8 @@ struct MenuBarView: View {
                 .controlSize(.small)
         case .idle:
             Button("Start") {
-                Task { await model.startMeetingRecording() }
+                AppDelegate.showMeetingSetupWindow()
+                Task { await model.presentMeetingSetup() }
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -253,7 +266,7 @@ struct MenuBarView: View {
 
             Spacer()
 
-            Button("Settings…") { openSettings() }
+            Button("Settings…") { AppDelegate.showSettingsWindow() }
                 .buttonStyle(.borderless)
 
             Button("Quit") { NSApplication.shared.terminate(nil) }
@@ -266,6 +279,31 @@ struct MenuBarView: View {
         let minutes = recordingSeconds / 60
         let seconds = recordingSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private var formattedMeetingDuration: String {
+        let minutes = meetingRecordingSeconds / 60
+        let seconds = meetingRecordingSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private var meetingStatusKey: String {
+        switch model.meetingStatus {
+        case .idle:
+            return "idle"
+        case .recording:
+            return "recording"
+        case .transcribing:
+            return "transcribing"
+        case .done:
+            return "done"
+        case .failed:
+            return "failed"
+        }
+    }
+
+    private func scaledFont(_ baseSize: CGFloat, weight: Font.Weight? = nil) -> Font {
+        .system(size: baseSize * model.utilityWindowZoomScale, weight: weight)
     }
 
     private func handleStatusChange(_ status: AppStatus) {
@@ -283,5 +321,241 @@ struct MenuBarView: View {
                 }
             }
         }
+    }
+
+    private func handleMeetingStatusChange(_ status: String) {
+        meetingTimerTask?.cancel()
+        meetingTimerTask = nil
+
+        if status == "recording" {
+            meetingRecordingSeconds = 0
+            meetingTimerTask = Task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(1))
+                    if !Task.isCancelled {
+                        meetingRecordingSeconds += 1
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct MeetingSetupView: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Record Meeting")
+                .font(scaledFont(17, weight: .semibold))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Meeting title")
+                    .font(scaledFont(13))
+                    .fontWeight(.medium)
+                TextField("Q2 roadmap sync", text: titleBinding)
+                    .font(scaledFont(13))
+                    .textFieldStyle(.roundedBorder)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Participants")
+                    .font(scaledFont(13))
+                    .fontWeight(.medium)
+                MeetingParticipantsView(state: model.meetingContextLookupState, zoomScale: zoomScale)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Personal notes")
+                    .font(scaledFont(13))
+                    .fontWeight(.medium)
+                Text("These notes will be sent alongside the transcript and should be treated as higher-priority context for MoM generation.")
+                    .font(scaledFont(12))
+                    .foregroundStyle(.secondary)
+                TextEditor(text: notesBinding)
+                    .font(scaledFont(14))
+                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 120, maxHeight: .infinity)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.25))
+                    )
+            }
+
+            HStack {
+                Button("Cancel") {
+                    model.cancelMeetingSetup()
+                    AppDelegate.closeMeetingSetupWindow()
+                }
+                .buttonStyle(.borderless)
+
+                Spacer()
+
+                Button("Start Recording") {
+                    Task {
+                        await model.startMeetingRecording()
+                        AppDelegate.closeMeetingSetupWindow()
+                    }
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(!model.canStartMeetingRecording)
+            }
+        }
+        .padding(18)
+        .frame(minWidth: 420, maxWidth: .infinity, minHeight: 430, maxHeight: .infinity)
+    }
+
+    private var titleBinding: Binding<String> {
+        Binding(
+            get: { model.meetingDraft.title },
+            set: { model.updateMeetingTitle($0) }
+        )
+    }
+
+    private var notesBinding: Binding<String> {
+        Binding(
+            get: { model.meetingDraft.personalNotes },
+            set: { model.updateMeetingDraftNotes($0) }
+        )
+    }
+
+    private var zoomScale: CGFloat {
+        model.utilityWindowZoomScale
+    }
+
+    private func scaledFont(_ baseSize: CGFloat, weight: Font.Weight? = nil) -> Font {
+        .system(size: baseSize * zoomScale, weight: weight)
+    }
+}
+
+private struct MeetingParticipantsView: View {
+    let state: MeetingContextLookupState
+    let zoomScale: CGFloat
+
+    var body: some View {
+        switch state {
+        case .idle, .loading:
+            HStack(spacing: 8) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Looking up Apple Calendar event…")
+                    .font(scaledFont(12))
+                    .foregroundStyle(.secondary)
+            }
+        case .suggested(let suggestion):
+            VStack(alignment: .leading, spacing: 4) {
+                if let message = state.message {
+                    Text(message)
+                        .font(scaledFont(12))
+                        .foregroundStyle(.secondary)
+                }
+
+                if suggestion.participants.isEmpty {
+                    Text("The matched event has no accepted or tentative human attendees.")
+                        .font(scaledFont(12))
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(suggestion.participants, id: \.self) { participant in
+                        Text(participant.formattedValue)
+                            .font(scaledFont(12))
+                    }
+                }
+            }
+        case .unavailable(let message):
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Calendar autofill unavailable")
+                    .font(scaledFont(12))
+                    .fontWeight(.medium)
+                Text(message)
+                    .font(scaledFont(12))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func scaledFont(_ baseSize: CGFloat, weight: Font.Weight? = nil) -> Font {
+        .system(size: baseSize * zoomScale, weight: weight)
+    }
+}
+
+private struct MeetingNotesEditorView: View {
+    @ObservedObject var model: AppModel
+    let durationText: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Personal notes")
+                    .font(scaledFont(12))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(durationText)
+                    .font(scaledFont(10))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+
+            TextEditor(text: notesBinding)
+                .font(scaledFont(13))
+                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 88, maxHeight: .infinity)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.orange.opacity(0.25))
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Live transcript preview")
+                        .font(scaledFont(12))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("10 sec chunks")
+                        .font(scaledFont(10))
+                        .foregroundStyle(.secondary)
+                }
+
+                if model.liveMeetingTranscript.isEmpty {
+                    Text(model.liveMeetingTranscriptionStatus)
+                        .font(scaledFont(12))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
+                        .padding(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.secondary.opacity(0.18))
+                        )
+                } else {
+                    ScrollView {
+                        Text(model.liveMeetingTranscript)
+                            .font(scaledFont(12))
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(minHeight: 96, maxHeight: .infinity)
+                    .padding(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.secondary.opacity(0.18))
+                    )
+
+                    if !model.liveMeetingTranscriptionStatus.isEmpty {
+                        Text(model.liveMeetingTranscriptionStatus)
+                            .font(scaledFont(10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var notesBinding: Binding<String> {
+        Binding(
+            get: { model.meetingNotes },
+            set: { model.updateActiveMeetingNotes($0) }
+        )
+    }
+
+    private func scaledFont(_ baseSize: CGFloat, weight: Font.Weight? = nil) -> Font {
+        .system(size: baseSize * model.utilityWindowZoomScale, weight: weight)
     }
 }

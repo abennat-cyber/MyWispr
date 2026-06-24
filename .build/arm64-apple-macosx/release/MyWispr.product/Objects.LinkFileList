@@ -1,9 +1,11 @@
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AppModel.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioRecorder.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/AudioSilenceDetector.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/HotkeyManager.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/InputInserter.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/KeychainStore.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LanguagePickerView.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalCalendarService.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/LocalWhisperService.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MeetingRecorder.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/MenuBarView.swift.o
@@ -17,4 +19,9 @@
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/TranscriptionService.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperAPIService.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWispr.build/WhisperLanguage.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/DictationOptimizationSupport.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingArtifacts.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingAutofillSupport.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/MeetingLiveTranscriptionSupport.swift.o
+/Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptPostProcessing.swift.o
 /Users/abennat/Documents/Projects/MyWispr/.build/arm64-apple-macosx/release/MyWisprCore.build/TranscriptionLanguageSupport.swift.o
