@@ -1,0 +1,143 @@
+import Foundation
+import MyWisprCore
+
+/// ISO 639-1 language codes supported by Whisper, plus an automatic detection option.
+/// Source: https://github.com/openai/whisper/blob/main/whisper/tokenizer.py
+enum WhisperLanguage: String, Codable, CaseIterable, Identifiable {
+    case auto = "auto"
+    case afrikaans = "af"
+    case arabic = "ar"
+    case armenian = "hy"
+    case azerbaijani = "az"
+    case belarusian = "be"
+    case bosnian = "bs"
+    case bulgarian = "bg"
+    case catalan = "ca"
+    case chinese = "zh"
+    case croatian = "hr"
+    case czech = "cs"
+    case danish = "da"
+    case dutch = "nl"
+    case english = "en"
+    case estonian = "et"
+    case finnish = "fi"
+    case french = "fr"
+    case galician = "gl"
+    case german = "de"
+    case greek = "el"
+    case hebrew = "he"
+    case hindi = "hi"
+    case hungarian = "hu"
+    case icelandic = "is"
+    case indonesian = "id"
+    case italian = "it"
+    case japanese = "ja"
+    case kannada = "kn"
+    case kazakh = "kk"
+    case korean = "ko"
+    case latvian = "lv"
+    case lithuanian = "lt"
+    case macedonian = "mk"
+    case malay = "ms"
+    case marathi = "mr"
+    case maori = "mi"
+    case nepali = "ne"
+    case norwegian = "no"
+    case persian = "fa"
+    case polish = "pl"
+    case portuguese = "pt"
+    case romanian = "ro"
+    case russian = "ru"
+    case serbian = "sr"
+    case slovak = "sk"
+    case slovenian = "sl"
+    case spanish = "es"
+    case swahili = "sw"
+    case swedish = "sv"
+    case tagalog = "tl"
+    case tamil = "ta"
+    case thai = "th"
+    case turkish = "tr"
+    case ukrainian = "uk"
+    case urdu = "ur"
+    case vietnamese = "vi"
+    case welsh = "cy"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .auto:        return "Auto-detect"
+        case .afrikaans:   return "Afrikaans"
+        case .arabic:      return "Arabic"
+        case .armenian:    return "Armenian"
+        case .azerbaijani: return "Azerbaijani"
+        case .belarusian:  return "Belarusian"
+        case .bosnian:     return "Bosnian"
+        case .bulgarian:   return "Bulgarian"
+        case .catalan:     return "Catalan"
+        case .chinese:     return "Chinese"
+        case .croatian:    return "Croatian"
+        case .czech:       return "Czech"
+        case .danish:      return "Danish"
+        case .dutch:       return "Dutch"
+        case .english:     return "English"
+        case .estonian:    return "Estonian"
+        case .finnish:     return "Finnish"
+        case .french:      return "French"
+        case .galician:    return "Galician"
+        case .german:      return "German"
+        case .greek:       return "Greek"
+        case .hebrew:      return "Hebrew"
+        case .hindi:       return "Hindi"
+        case .hungarian:   return "Hungarian"
+        case .icelandic:   return "Icelandic"
+        case .indonesian:  return "Indonesian"
+        case .italian:     return "Italian"
+        case .japanese:    return "Japanese"
+        case .kannada:     return "Kannada"
+        case .kazakh:      return "Kazakh"
+        case .korean:      return "Korean"
+        case .latvian:     return "Latvian"
+        case .lithuanian:  return "Lithuanian"
+        case .macedonian:  return "Macedonian"
+        case .malay:       return "Malay"
+        case .marathi:     return "Marathi"
+        case .maori:       return "Māori"
+        case .nepali:      return "Nepali"
+        case .norwegian:   return "Norwegian"
+        case .persian:     return "Persian"
+        case .polish:      return "Polish"
+        case .portuguese:  return "Portuguese"
+        case .romanian:    return "Romanian"
+        case .russian:     return "Russian"
+        case .serbian:     return "Serbian"
+        case .slovak:      return "Slovak"
+        case .slovenian:   return "Slovenian"
+        case .spanish:     return "Spanish"
+        case .swahili:     return "Swahili"
+        case .swedish:     return "Swedish"
+        case .tagalog:     return "Tagalog"
+        case .tamil:       return "Tamil"
+        case .thai:        return "Thai"
+        case .turkish:     return "Turkish"
+        case .ukrainian:   return "Ukrainian"
+        case .urdu:        return "Urdu"
+        case .vietnamese:  return "Vietnamese"
+        case .welsh:       return "Welsh"
+        }
+    }
+
+    /// The value passed to whisper-cli --language and the Whisper API language field.
+    /// Auto-detect passes "auto" to whisper-cli and omits the field from the API request.
+    var whisperCode: String { rawValue }
+
+    var transcriptionScript: TranscriptionScript {
+        switch self {
+        case .hebrew:
+            return .hebrew
+        default:
+            return .latin
+        }
+    }
+}

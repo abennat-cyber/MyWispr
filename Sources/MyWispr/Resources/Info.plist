@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>MyWispr</string>
+    <key>CFBundleIconFile</key>
+    <string>MyWispr</string>
+    <key>CFBundleExecutable</key>
+    <string>MyWispr</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.abennat.mywispr</string>
+    <key>CFBundleName</key>
+    <string>MyWispr</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.4.0</string>
+    <key>CFBundleVersion</key>
+    <string>4</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.productivity</string>
+    <key>LSUIElement</key>
+    <true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MyWispr records short dictation clips to transcribe them into text.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>MyWispr reads your local calendar events to autofill meeting titles and participants before recording starts.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>MyWispr reads your local calendar events to autofill meeting titles and participants before recording starts.</string>
+	<key>NSScreenCaptureDescription</key>
+	<string>MyWispr captures system audio during meetings to produce transcribed meeting notes.</string>
+</dict>
+</plist>
