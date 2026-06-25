@@ -40,3 +40,7 @@ MyWispr.app/
 
 # Instruments
 *.trace
+
+# Local project files
+PLAN.md
+
