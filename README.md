@@ -4,14 +4,14 @@ A lightweight macOS menu bar app that transcribes your voice and instantly types
 
 ![MyWispr logo](MyWisprLogo.png)
 
-[![Download](https://img.shields.io/badge/Download-v0.1.0-blue?style=for-the-badge&logo=apple)](https://github.com/assafbennatan-stack/MyWispr/releases/download/v0.1.0/MyWispr-0.1.0.dmg)
-[![Release](https://img.shields.io/github/v/release/assafbennatan-stack/MyWispr?style=for-the-badge)](https://github.com/assafbennatan-stack/MyWispr/releases/latest)
+[![Download](https://img.shields.io/badge/Download-v0.4.3-blue?style=for-the-badge&logo=apple)](https://github.com/abennat-cyber/MyWispr/releases/download/v0.4.3/MyWispr-0.4.3.dmg)
+[![Release](https://img.shields.io/github/v/release/abennat-cyber/MyWispr?style=for-the-badge)](https://github.com/abennat-cyber/MyWispr/releases/latest)
 
 ---
 
 ## Download
 
-**[MyWispr-0.1.0.dmg](https://github.com/assafbennatan-stack/MyWispr/releases/download/v0.1.0/MyWispr-0.1.0.dmg)** — macOS 14+ · Apple Silicon
+**[MyWispr-0.4.3.dmg](https://github.com/abennat-cyber/MyWispr/releases/download/v0.4.3/MyWispr-0.4.3.dmg)** — macOS 14+ · Apple Silicon
 
 1. Open the DMG
 2. Drag **MyWispr.app** to your **Applications** folder
@@ -53,7 +53,7 @@ A lightweight macOS menu bar app that transcribes your voice and instantly types
 Clone the repository and build with Swift Package Manager:
 
 ```bash
-git clone https://github.com/assafbennatan-stack/MyWispr.git
+git clone https://github.com/abennat-cyber/MyWispr.git
 cd MyWispr
 swift build -c release
 ```
@@ -127,7 +127,9 @@ MyWispr/
 │   ├── Models.swift            # All data types and settings schema
 │   ├── SettingsStore.swift     # Persistent settings + Keychain API key storage
 │   ├── AudioRecorder.swift     # Microphone capture (AVFoundation)
+│   ├── AudioSilenceDetector.swift # Analyzes audio for silence/speech presence
 │   ├── MeetingRecorder.swift   # System + mic capture (ScreenCaptureKit)
+│   ├── LocalCalendarService.swift # Reads calendar events for auto-filling titles
 │   ├── TranscriptionService.swift  # Routes to the active engine
 │   ├── LocalWhisperService.swift   # whisper.cpp integration
 │   ├── WhisperAPIService.swift     # OpenAI Whisper API integration
@@ -141,7 +143,23 @@ MyWispr/
 │   ├── LanguagePickerView.swift
 │   ├── WhisperLanguage.swift
 │   └── ProcessRunner.swift
+└── Sources/MyWisprCore/        # Core helper models and business rules
+    ├── DictationOptimizationSupport.swift # Dictation/latency configurations
+    ├── MeetingArtifacts.swift  # Model and schema representation for meetings
+    ├── MeetingAutofillSupport.swift # Logic for auto-populating meeting info
+    ├── MeetingLiveTranscriptionSupport.swift # Live segment processing
+    ├── TranscriptPostProcessing.swift # Custom filters (e.g. silence hallucinations)
+    └── TranscriptionLanguageSupport.swift # Language mappings and detection details
 ```
+
+---
+
+## Releases & Changelog
+
+- **v0.4.3** — Avoid launch-time SwiftUI windows (improving startup performance and menu-bar only behavior).
+- **v0.4.2** — Remove AppKit display-cycle window mutations (cleaner window management lifecycle).
+- **v0.4.1** — Fix settings window layout crash.
+- **v0.4.0** — Initial open-source release of MyWispr. Features include local/cloud Whisper support, custom shell command transcription engine, meeting recording (mic + system audio via ScreenCaptureKit), calendar auto-fill, custom vocabulary, and secure Settings storage.
 
 ---
 
