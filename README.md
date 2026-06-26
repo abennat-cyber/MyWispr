@@ -4,14 +4,14 @@ A lightweight macOS menu bar app that transcribes your voice and instantly types
 
 ![MyWispr logo](MyWisprLogo.png)
 
-[![Download](https://img.shields.io/badge/Download-v0.4.4-blue?style=for-the-badge&logo=apple)](https://github.com/abennat-cyber/MyWispr/releases/download/v0.4.4/MyWispr-0.4.4.dmg)
+[![Download](https://img.shields.io/badge/Download-v0.4.5-blue?style=for-the-badge&logo=apple)](https://github.com/abennat-cyber/MyWispr/releases/download/v0.4.5/MyWispr-0.4.5.dmg)
 [![Release](https://img.shields.io/github/v/release/abennat-cyber/MyWispr?style=for-the-badge)](https://github.com/abennat-cyber/MyWispr/releases/latest)
 
 ---
 
 ## Download
 
-**[MyWispr-0.4.4.dmg](https://github.com/abennat-cyber/MyWispr/releases/download/v0.4.4/MyWispr-0.4.4.dmg)** — macOS 14+ · Apple Silicon
+**[MyWispr-0.4.5.dmg](https://github.com/abennat-cyber/MyWispr/releases/download/v0.4.5/MyWispr-0.4.5.dmg)** — macOS 14+ · Apple Silicon
 
 1. Open the DMG
 2. Drag **MyWispr.app** to your **Applications** folder
@@ -156,7 +156,8 @@ MyWispr/
 
 ## Releases & Changelog
 
-- **v0.4.4** — Add setting to mute system speaker volume output during dictation recording.
+- **v0.4.5** — Release v0.4.5.
+- **v0.4.5** — Add setting to mute system speaker volume output during dictation recording.
 - **v0.4.3** — Avoid launch-time SwiftUI windows (improving startup performance and menu-bar only behavior).
 - **v0.4.2** — Remove AppKit display-cycle window mutations (cleaner window management lifecycle).
 - **v0.4.1** — Fix settings window layout crash.
