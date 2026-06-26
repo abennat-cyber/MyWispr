@@ -238,12 +238,13 @@ struct AppSettings: Codable, Equatable {
     /// names, organization terms, and domain-specific vocabulary.
     var customVocabulary: [String] = []
     var muteSpeakerWhileRecording: Bool = false
+    var customWhisperPrompt: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case shortcut, recordingMode, selectedEngine, transcriptionLanguages,
              recordingDirectory, recordingRetention, whisperModel, localWhisperModel,
              localWhisperModelDir, customCommandTemplate, selectedCalendarIdentifier,
-             customVocabulary, muteSpeakerWhileRecording
+             customVocabulary, muteSpeakerWhileRecording, customWhisperPrompt
     }
 
     init() {}
@@ -263,6 +264,7 @@ struct AppSettings: Codable, Equatable {
         selectedCalendarIdentifier = try container.decodeIfPresent(String.self, forKey: .selectedCalendarIdentifier) ?? ""
         customVocabulary = try container.decodeIfPresent([String].self, forKey: .customVocabulary) ?? []
         muteSpeakerWhileRecording = try container.decodeIfPresent(Bool.self, forKey: .muteSpeakerWhileRecording) ?? false
+        customWhisperPrompt = try container.decodeIfPresent(String.self, forKey: .customWhisperPrompt)
     }
 
     /// The single language code to pass to whisper-cli, or "auto".
@@ -304,6 +306,13 @@ struct AppSettings: Codable, Equatable {
     }
 
     var localWhisperPrompt: String? {
+        if let custom = customWhisperPrompt {
+            return custom.isEmpty ? nil : custom
+        }
+        return defaultLocalWhisperPrompt
+    }
+
+    var defaultLocalWhisperPrompt: String? {
         TranscriptionPromptBuilder.localPrompt(
             languageNames: selectedLanguageNames,
             languageScripts: selectedLanguageScripts,

@@ -436,6 +436,34 @@ struct SettingsView: View {
                 .foregroundStyle(.green)
                 .font(.caption)
         }
+
+        Divider()
+        
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Custom Prompt")
+                .fontWeight(.medium)
+            
+            TextEditor(text: Binding(
+                get: { settingsStore.settings.customWhisperPrompt ?? settingsStore.settings.defaultLocalWhisperPrompt ?? "" },
+                set: { settingsStore.settings.customWhisperPrompt = $0 }
+            ))
+            .font(.system(.body, design: .monospaced))
+            .frame(height: 60)
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
+            
+            HStack {
+                Text("Provides context to the model to improve accuracy.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Reset to Default") {
+                    settingsStore.settings.customWhisperPrompt = nil
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .disabled(settingsStore.settings.customWhisperPrompt == nil)
+            }
+        }
     }
 
     @ViewBuilder
