@@ -41,6 +41,7 @@ final class AppModel: ObservableObject {
     private var isRecording = false
     private var isMeetingRecording = false
     private var liveMeetingTranscriptionTask: Task<Void, Never>?
+    private var wasMutedByApp = false
 
     init(settingsStore: SettingsStore) {
         self.settingsStore = settingsStore
@@ -84,6 +85,7 @@ final class AppModel: ObservableObject {
     func startRecording() async {
         guard !isRecording else { return }
         targetApplication = NSWorkspace.shared.frontmostApplication
+        muteSystemAudioIfNeeded()
 
         do {
             let format = settingsStore.settings.preferredDictationRecordingFormat
@@ -92,6 +94,7 @@ final class AppModel: ObservableObject {
             status = .recording
         } catch {
             status = .failed(error.localizedDescription)
+            unmuteSystemAudioIfNeeded()
         }
     }
 
@@ -99,6 +102,7 @@ final class AppModel: ObservableObject {
         guard isRecording else { return }
         status = .transcribing
         isRecording = false
+        unmuteSystemAudioIfNeeded()
 
         do {
             let audioURL = try recorder.stopRecording()
@@ -349,6 +353,21 @@ final class AppModel: ObservableObject {
 
     // MARK: - Private
 
+    private func muteSystemAudioIfNeeded() {
+        guard settingsStore.settings.muteSpeakerWhileRecording else { return }
+        if !SystemVolumeController.isMuted() {
+            if SystemVolumeController.setMuted(true) {
+                wasMutedByApp = true
+            }
+        }
+    }
+
+    private func unmuteSystemAudioIfNeeded() {
+        guard wasMutedByApp else { return }
+        SystemVolumeController.setMuted(false)
+        wasMutedByApp = false
+    }
+
     private func scheduleStatusReset() {
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(4))
@@ -436,5 +455,11 @@ final class AppModel: ObservableObject {
     private func handleShortcutReleased() async {
         guard settingsStore.settings.recordingMode == .holdToTalk, isRecording else { return }
         await stopRecordingAndTranscribe()
+    }
+
+    deinit {
+        if wasMutedByApp {
+            SystemVolumeController.setMuted(false)
+        }
     }
 }

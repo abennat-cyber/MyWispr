@@ -431,6 +431,7 @@ struct MyWisprBehaviorTests {
         )
     }
 
+
     private static func tryValue<T>(_ operation: () throws -> T) -> T {
         do {
             return try operation()

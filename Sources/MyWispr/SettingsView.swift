@@ -77,6 +77,9 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .controlSize(.small)
                 }
+
+                Toggle("Mute system audio while recording", isOn: $settingsStore.settings.muteSpeakerWhileRecording)
+                    .help("Mutes output volume of the default speaker while recording is active, restoring it afterward.")
             }
 
             Section("Transcription") {

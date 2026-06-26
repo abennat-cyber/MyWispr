@@ -237,6 +237,33 @@ struct AppSettings: Codable, Equatable {
     /// User-defined words/phrases passed to Whisper to improve recognition of
     /// names, organization terms, and domain-specific vocabulary.
     var customVocabulary: [String] = []
+    var muteSpeakerWhileRecording: Bool = false
+
+    enum CodingKeys: String, CodingKey {
+        case shortcut, recordingMode, selectedEngine, transcriptionLanguages,
+             recordingDirectory, recordingRetention, whisperModel, localWhisperModel,
+             localWhisperModelDir, customCommandTemplate, selectedCalendarIdentifier,
+             customVocabulary, muteSpeakerWhileRecording
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        shortcut = try container.decodeIfPresent(KeyboardShortcut.self, forKey: .shortcut) ?? .default
+        recordingMode = try container.decodeIfPresent(RecordingMode.self, forKey: .recordingMode) ?? .toggle
+        selectedEngine = try container.decodeIfPresent(TranscriptionEngineKind.self, forKey: .selectedEngine) ?? .localWhisper
+        transcriptionLanguages = try container.decodeIfPresent([WhisperLanguage].self, forKey: .transcriptionLanguages) ?? []
+        recordingDirectory = try container.decodeIfPresent(String.self, forKey: .recordingDirectory) ?? "~/Library/Application Support/MyWispr/Recordings"
+        recordingRetention = try container.decodeIfPresent(RecordingRetention.self, forKey: .recordingRetention) ?? .session
+        whisperModel = try container.decodeIfPresent(String.self, forKey: .whisperModel) ?? "whisper-1"
+        localWhisperModel = try container.decodeIfPresent(LocalWhisperModel.self, forKey: .localWhisperModel) ?? .base
+        localWhisperModelDir = try container.decodeIfPresent(String.self, forKey: .localWhisperModelDir) ?? "~/.local/share/whisper/models"
+        customCommandTemplate = try container.decodeIfPresent(String.self, forKey: .customCommandTemplate) ?? ""
+        selectedCalendarIdentifier = try container.decodeIfPresent(String.self, forKey: .selectedCalendarIdentifier) ?? ""
+        customVocabulary = try container.decodeIfPresent([String].self, forKey: .customVocabulary) ?? []
+        muteSpeakerWhileRecording = try container.decodeIfPresent(Bool.self, forKey: .muteSpeakerWhileRecording) ?? false
+    }
 
     /// The single language code to pass to whisper-cli, or "auto".
     /// whisper-cli only supports one language at a time; when multiple are
