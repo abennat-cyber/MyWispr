@@ -26,6 +26,7 @@ enum RecordingError: Error, LocalizedError {
 final class AudioRecorder: NSObject, ObservableObject {
     private var recorder: AVAudioRecorder?
     private var outputURL: URL?
+    private var livePreviewTask: Task<Void, Never>?
 
     func startRecording(in directory: String, format: RecordingAudioFormat = .m4a) async throws {
         let granted = await AVCaptureDevice.requestAccess(for: .audio)
@@ -54,11 +55,24 @@ final class AudioRecorder: NSObject, ObservableObject {
 
         self.recorder = recorder
         self.outputURL = url
+
+        if #available(macOS 26.0, *) {
+            livePreviewTask?.cancel()
+            livePreviewTask = Task { @MainActor in
+                try? await LiveDictationSession.shared.start()
+            }
+        }
     }
 
     func stopRecording() throws -> URL {
         recorder?.stop()
         recorder = nil
+
+        livePreviewTask?.cancel()
+        livePreviewTask = nil
+        if #available(macOS 26.0, *) {
+            LiveDictationSession.shared.finish()
+        }
 
         guard let outputURL, FileManager.default.fileExists(atPath: outputURL.path) else {
             throw RecordingError.outputMissing
