@@ -12,8 +12,8 @@ final class LiveDictationSession {
 
     private let hudState = LiveDictationHUDState()
     private lazy var hudPanel = LiveDictationHUDPanel(state: hudState)
+    private let capture = LiveAudioCapture()
 
-    private var audioEngine: AVAudioEngine?
     private var analyzer: SpeechAnalyzer?
     private var transcriber: SpeechTranscriber?
     private var inputContinuation: AsyncStream<AnalyzerInput>.Continuation?
@@ -23,91 +23,91 @@ final class LiveDictationSession {
 
     private init() {}
 
-    func start(locale: Locale = .current) async throws {
+    func start(locale: Locale = .current, vocabulary: [String] = []) async throws {
         guard !isRunning else { return }
         guard SpeechTranscriber.isAvailable else { return }
         guard let resolvedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else { return }
 
-        let transcriber = SpeechTranscriber(
-            locale: resolvedLocale,
-            transcriptionOptions: [],
-            reportingOptions: [.volatileResults],
-            attributeOptions: []
-        )
-
-        try await ensureModelInstalled(for: transcriber)
-
-        let analyzer = SpeechAnalyzer(modules: [transcriber])
-        guard let targetFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
-            return
-        }
-
-        let (inputStream, continuation) = AsyncStream<AnalyzerInput>.makeStream()
-        let engine = AVAudioEngine()
-        let inputNode = engine.inputNode
-        let sourceFormat = inputNode.outputFormat(forBus: 0)
-        guard sourceFormat.sampleRate > 0, sourceFormat.channelCount > 0 else { return }
-
-        let converter = AVAudioConverter(from: sourceFormat, to: targetFormat)
-        finalizedText = ""
         hudState.transcript = ""
-        hudState.isListening = true
-        hudState.statusText = "Listening…"
+        hudState.level = 0
+        hudState.isListening = false
+        hudState.statusText = "Preparing live transcription…"
         hudPanel.present()
 
-        self.transcriber = transcriber
-        self.analyzer = analyzer
-        self.inputContinuation = continuation
-        self.audioEngine = engine
-        self.isRunning = true
+        do {
+            let transcriber = SpeechTranscriber(
+                locale: resolvedLocale,
+                transcriptionOptions: [],
+                reportingOptions: [.volatileResults],
+                attributeOptions: []
+            )
 
-        resultTask = Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                for try await result in transcriber.results {
-                    let text = String(result.text.characters)
-                    if result.isFinal {
-                        self.finalizedText += text
-                        self.hudState.transcript = self.finalizedText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    } else {
-                        self.hudState.transcript = (self.finalizedText + text)
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
+            try await ensureModelInstalled(for: transcriber)
+            try Task.checkCancellation()
+
+            let analyzer = SpeechAnalyzer(modules: [transcriber])
+            if !vocabulary.isEmpty {
+                let context = AnalysisContext()
+                context.contextualStrings[.general] = Array(vocabulary.prefix(100))
+                try? await analyzer.setContext(context)
+            }
+
+            guard let targetFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+                throw LiveDictationError.unsupportedAudioFormat
+            }
+
+            let (inputStream, continuation) = AsyncStream<AnalyzerInput>.makeStream()
+            finalizedText = ""
+            self.transcriber = transcriber
+            self.analyzer = analyzer
+            self.inputContinuation = continuation
+
+            resultTask = Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    for try await result in transcriber.results {
+                        let text = String(result.text.characters)
+                        if result.isFinal {
+                            self.finalizedText += text
+                            self.hudState.transcript = self.finalizedText
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                        } else {
+                            self.hudState.transcript = (self.finalizedText + text)
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
+                    }
+                } catch {
+                    if self.isRunning {
+                        self.hudState.statusText = "Live preview unavailable"
                     }
                 }
-            } catch {
-                if self.isRunning {
-                    self.hudState.statusText = "Live preview unavailable"
-                }
-            }
-        }
-
-        inputNode.installTap(onBus: 0, bufferSize: 2_048, format: sourceFormat) { [weak self] buffer, _ in
-            guard let self else { return }
-
-            let level = Self.rmsLevel(buffer)
-            Task { @MainActor [weak self] in
-                self?.hudState.level = level
             }
 
-            guard let converted = Self.convert(
-                buffer,
-                from: sourceFormat,
-                to: targetFormat,
-                using: converter
-            ) else { return }
-
-            continuation.yield(AnalyzerInput(buffer: converted))
-        }
-
-        do {
             try await analyzer.start(inputSequence: inputStream)
-            engine.prepare()
-            try engine.start()
+            try Task.checkCancellation()
+
+            try capture.start(
+                outputFormat: targetFormat,
+                onBuffer: { chunk in
+                    continuation.yield(AnalyzerInput(buffer: chunk.buffer))
+                },
+                onLevel: { [weak self] level in
+                    Task { @MainActor [weak self] in
+                        self?.hudState.level = level
+                    }
+                }
+            )
+
+            isRunning = true
+            hudState.isListening = true
+            hudState.statusText = "Listening…"
         } catch {
-            inputNode.removeTap(onBus: 0)
-            continuation.finish()
-            await analyzer.cancelAndFinishNow()
+            capture.stop()
+            inputContinuation?.finish()
+            inputContinuation = nil
+            await analyzer?.cancelAndFinishNow()
             reset()
+            hudPanel.dismiss()
             throw error
         }
     }
@@ -122,9 +122,7 @@ final class LiveDictationSession {
         hudState.isListening = false
         hudState.statusText = hudState.transcript.isEmpty ? "Transcribing…" : "Finishing…"
 
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.stop()
-        audioEngine = nil
+        capture.stop()
         inputContinuation?.finish()
         inputContinuation = nil
 
@@ -144,12 +142,12 @@ final class LiveDictationSession {
     }
 
     private func reset() {
+        capture.stop()
         resultTask?.cancel()
         resultTask = nil
         analyzer = nil
         transcriber = nil
         inputContinuation = nil
-        audioEngine = nil
         finalizedText = ""
         hudState.level = 0
         hudState.isListening = false
@@ -168,80 +166,137 @@ final class LiveDictationSession {
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
             hudState.statusText = "Downloading speech model…"
             try await request.downloadAndInstall()
-            hudState.statusText = "Listening…"
+            try Task.checkCancellation()
         }
     }
+}
 
-    nonisolated private static func convert(
-        _ inputBuffer: AVAudioPCMBuffer,
-        from sourceFormat: AVAudioFormat,
-        to targetFormat: AVAudioFormat,
-        using converter: AVAudioConverter?
-    ) -> AVAudioPCMBuffer? {
-        if formatsAreEquivalent(sourceFormat, targetFormat) {
-            guard let copy = AVAudioPCMBuffer(
-                pcmFormat: sourceFormat,
-                frameCapacity: inputBuffer.frameLength
-            ) else { return nil }
-            copy.frameLength = inputBuffer.frameLength
+@available(macOS 26.0, *)
+private enum LiveDictationError: Error, LocalizedError {
+    case unsupportedAudioFormat
 
-            let audioBufferList = inputBuffer.audioBufferList.pointee
-            let copyBufferList = copy.mutableAudioBufferList
-            for index in 0..<Int(audioBufferList.mNumberBuffers) {
-                let source = audioBufferList.mBuffers
-                let destination = copyBufferList.pointee.mBuffers
-                if index == 0,
-                   let sourceData = source.mData,
-                   let destinationData = destination.mData {
-                    memcpy(destinationData, sourceData, Int(source.mDataByteSize))
-                }
-            }
-            return copy
+    var errorDescription: String? {
+        "Live transcription could not negotiate a compatible microphone format."
+    }
+}
+
+@available(macOS 26.0, *)
+private struct LiveAudioChunk: @unchecked Sendable {
+    let buffer: AVAudioPCMBuffer
+}
+
+@available(macOS 26.0, *)
+private final class LiveAudioCapture: @unchecked Sendable {
+    private let engine = AVAudioEngine()
+    private nonisolated(unsafe) var converter: AVAudioConverter?
+    private nonisolated(unsafe) var outputFormat: AVAudioFormat?
+    private nonisolated(unsafe) var onBuffer: (@Sendable (LiveAudioChunk) -> Void)?
+    private nonisolated(unsafe) var onLevel: (@Sendable (Float) -> Void)?
+    private var isRunning = false
+
+    func start(
+        outputFormat: AVAudioFormat,
+        onBuffer: @escaping @Sendable (LiveAudioChunk) -> Void,
+        onLevel: @escaping @Sendable (Float) -> Void
+    ) throws {
+        guard !isRunning else { return }
+
+        self.outputFormat = outputFormat
+        self.onBuffer = onBuffer
+        self.onLevel = onLevel
+
+        let inputNode = engine.inputNode
+        let nativeFormat = inputNode.outputFormat(forBus: 0)
+        guard nativeFormat.sampleRate > 0, nativeFormat.channelCount > 0 else {
+            throw LiveDictationError.unsupportedAudioFormat
         }
 
-        guard let converter else { return nil }
-        let ratio = targetFormat.sampleRate / sourceFormat.sampleRate
-        let outputCapacity = max(
-            AVAudioFrameCount(Double(inputBuffer.frameLength) * ratio) + 256,
-            256
-        )
-        guard let outputBuffer = AVAudioPCMBuffer(
-            pcmFormat: targetFormat,
-            frameCapacity: outputCapacity
-        ) else { return nil }
+        converter = nativeFormat == outputFormat
+            ? nil
+            : AVAudioConverter(from: nativeFormat, to: outputFormat)
 
-        var suppliedInput = false
+        inputNode.removeTap(onBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 2_048, format: nativeFormat) { [weak self] buffer, _ in
+            self?.handle(buffer)
+        }
+
+        engine.prepare()
+        try engine.start()
+        isRunning = true
+    }
+
+    func stop() {
+        guard isRunning else { return }
+        engine.inputNode.removeTap(onBus: 0)
+        engine.stop()
+        isRunning = false
+        converter = nil
+        outputFormat = nil
+        onBuffer = nil
+        onLevel = nil
+    }
+
+    private func handle(_ buffer: AVAudioPCMBuffer) {
+        onLevel?(Self.rms(of: buffer))
+        guard let outputFormat else { return }
+
+        guard let converter else {
+            if let copy = Self.copy(buffer) {
+                onBuffer?(LiveAudioChunk(buffer: copy))
+            }
+            return
+        }
+
+        let ratio = outputFormat.sampleRate / buffer.format.sampleRate
+        let capacity = AVAudioFrameCount((Double(buffer.frameLength) * ratio).rounded(.up)) + 64
+        guard let converted = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: capacity) else { return }
+
+        nonisolated(unsafe) let input = buffer
+        let consumed = OneShotLatch()
         var conversionError: NSError?
-        let status = converter.convert(to: outputBuffer, error: &conversionError) { _, inputStatus in
-            if suppliedInput {
-                inputStatus.pointee = .noDataNow
+        let status = converter.convert(to: converted, error: &conversionError) { _, outputStatus in
+            guard !consumed.take() else {
+                outputStatus.pointee = .noDataNow
                 return nil
             }
-            suppliedInput = true
-            inputStatus.pointee = .haveData
-            return inputBuffer
+            outputStatus.pointee = .haveData
+            return input
         }
 
-        guard conversionError == nil else { return nil }
-        switch status {
-        case .haveData, .inputRanDry, .endOfStream:
-            return outputBuffer.frameLength > 0 ? outputBuffer : nil
-        case .error:
-            return nil
-        @unknown default:
+        guard conversionError == nil, status != .error, converted.frameLength > 0 else { return }
+        onBuffer?(LiveAudioChunk(buffer: converted))
+    }
+
+    private static func copy(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard buffer.frameLength > 0,
+              let copy = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: buffer.frameLength)
+        else { return nil }
+
+        copy.frameLength = buffer.frameLength
+        let channels = Int(buffer.format.channelCount)
+        let frames = Int(buffer.frameLength)
+
+        if let source = buffer.floatChannelData, let destination = copy.floatChannelData {
+            for channel in 0..<channels {
+                destination[channel].update(from: source[channel], count: frames)
+            }
+        } else if let source = buffer.int16ChannelData, let destination = copy.int16ChannelData {
+            for channel in 0..<channels {
+                destination[channel].update(from: source[channel], count: frames)
+            }
+        } else if let source = buffer.int32ChannelData, let destination = copy.int32ChannelData {
+            for channel in 0..<channels {
+                destination[channel].update(from: source[channel], count: frames)
+            }
+        } else {
             return nil
         }
+
+        return copy
     }
 
-    nonisolated private static func formatsAreEquivalent(_ lhs: AVAudioFormat, _ rhs: AVAudioFormat) -> Bool {
-        lhs.sampleRate == rhs.sampleRate
-            && lhs.channelCount == rhs.channelCount
-            && lhs.commonFormat == rhs.commonFormat
-            && lhs.isInterleaved == rhs.isInterleaved
-    }
-
-    nonisolated private static func rmsLevel(_ buffer: AVAudioPCMBuffer) -> Float {
-        guard let channel = buffer.floatChannelData?.pointee else { return 0 }
+    private static func rms(of buffer: AVAudioPCMBuffer) -> Float {
+        guard let channel = buffer.floatChannelData?[0] else { return 0 }
         let count = Int(buffer.frameLength)
         guard count > 0 else { return 0 }
 
@@ -250,7 +305,18 @@ final class LiveDictationSession {
             let sample = channel[index]
             sum += sample * sample
         }
-        return min(1, sqrt(sum / Float(count)) * 5)
+        let rms = (sum / Float(count)).squareRoot()
+        let db = 20 * log10(max(rms, 1e-7))
+        return max(0, min(1, (db + 50) / 50))
+    }
+
+    private final class OneShotLatch: @unchecked Sendable {
+        private var fired = false
+
+        func take() -> Bool {
+            defer { fired = true }
+            return fired
+        }
     }
 }
 
