@@ -55,6 +55,7 @@ public struct RuleBasedDictationTextFormatter: DictationTextFormatting {
     private func collapseWhitespace(in text: String) -> String {
         text
             .replacingOccurrences(of: "[ \\t]+", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: " *\\n *", with: "\n", options: .regularExpression)
             .replacingOccurrences(of: " +([,.!?;:])", with: "$1", options: .regularExpression)
             .replacingOccurrences(of: "\\n{3,}", with: "\n\n", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
