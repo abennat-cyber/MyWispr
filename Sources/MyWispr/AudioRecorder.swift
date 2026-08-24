@@ -57,9 +57,13 @@ final class AudioRecorder: NSObject, ObservableObject {
         self.outputURL = url
 
         if #available(macOS 26.0, *) {
+            let preview = livePreviewConfiguration()
             livePreviewTask?.cancel()
             livePreviewTask = Task { @MainActor in
-                try? await LiveDictationSession.shared.start()
+                try? await LiveDictationSession.shared.start(
+                    locale: preview.locale,
+                    vocabulary: preview.vocabulary
+                )
             }
         }
     }
@@ -80,6 +84,20 @@ final class AudioRecorder: NSObject, ObservableObject {
 
         self.outputURL = nil
         return outputURL
+    }
+
+    private func livePreviewConfiguration() -> (locale: Locale, vocabulary: [String]) {
+        let defaultsKey = "com.abennat.mywispr.settings"
+        guard let data = UserDefaults.standard.data(forKey: defaultsKey),
+              let settings = try? JSONDecoder().decode(AppSettings.self, from: data)
+        else {
+            return (.current, [])
+        }
+
+        let locale = settings.singleSelectedTranscriptionLanguage
+            .map { Locale(identifier: $0.whisperCode) }
+            ?? .current
+        return (locale, settings.customVocabulary)
     }
 
     private func resolvedURL(for path: String) -> URL {
