@@ -20,6 +20,7 @@ enum RecordingMode: String, Codable, CaseIterable, Identifiable {
 }
 
 enum TranscriptionEngineKind: String, Codable, CaseIterable, Identifiable {
+    case appleSpeech
     case localWhisper
     case whisperAPI
     case customCommand
@@ -28,6 +29,8 @@ enum TranscriptionEngineKind: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .appleSpeech:
+            return "Apple Speech (on-device, macOS 26+)"
         case .localWhisper:
             return "Local Whisper (whisper.cpp)"
         case .whisperAPI:
