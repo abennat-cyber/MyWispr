@@ -94,6 +94,8 @@ struct SettingsView: View {
                 }
 
                 switch settingsStore.settings.selectedEngine {
+                case .appleSpeech:
+                    appleSpeechFields
                 case .localWhisper:
                     localWhisperFields
                 case .whisperAPI:
@@ -169,7 +171,7 @@ struct SettingsView: View {
             .onChange(of: settingsStore.openAIAPIKey) { _, _ in
                 settingsChanged = true
             }
-        } // end VStack
+        }
     }
 
     private var restartBanner: some View {
@@ -192,8 +194,6 @@ struct SettingsView: View {
         .background(Color.accentColor)
         .transition(.move(edge: .top).combined(with: .opacity))
     }
-
-    // MARK: - Language picker
 
     @ViewBuilder
     private var languagePickerRow: some View {
@@ -247,7 +247,11 @@ struct SettingsView: View {
                 }
             }
 
-            if !langs.isEmpty {
+            if settingsStore.settings.selectedEngine == .appleSpeech {
+                Text("Apple Speech uses one locale at a time. Select one language for predictable results; unsupported locales will return an error.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if !langs.isEmpty {
                 Text("Whisper will detect between these languages. Fewer languages = faster, more accurate detection.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -258,8 +262,6 @@ struct SettingsView: View {
             }
         }
     }
-
-    // MARK: - Dictionary
 
     @ViewBuilder
     private var dictionarySection: some View {
@@ -286,7 +288,7 @@ struct SettingsView: View {
             }
         }
 
-        Text("These words are passed to Whisper to improve recognition of names, places, and domain-specific terms.")
+        Text("These words are passed to the active transcription engine to improve recognition of names, places, and domain-specific terms.")
             .font(.caption)
             .foregroundStyle(.secondary)
     }
@@ -300,7 +302,6 @@ struct SettingsView: View {
     }
 
     private var logoPath: String {
-        // Look next to the binary first (installed app), then in the project source tree.
         let candidates = [
             Bundle.main.path(forResource: "MyWisprLogo", ofType: "png"),
             "/Applications/MyWispr.app/Contents/Resources/MyWisprLogo.png",
@@ -308,8 +309,6 @@ struct SettingsView: View {
         ]
         return candidates.compactMap { $0 }.first(where: { FileManager.default.fileExists(atPath: $0) }) ?? ""
     }
-
-    // MARK: - Engine fields
 
     @ViewBuilder
     private var calendarSection: some View {
@@ -370,6 +369,28 @@ struct SettingsView: View {
                 .buttonStyle(.bordered)
             }
         }
+    }
+
+    @ViewBuilder
+    private var appleSpeechFields: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if #available(macOS 26.0, *) {
+                Label("On-device Apple Speech available", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+                Text("macOS manages the speech model. The first transcription for a locale may download model assets. Custom vocabulary is used as recognition context.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Label("Requires macOS 26 or later", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .fontWeight(.medium)
+                Text("Use Local Whisper on older macOS versions. Hebrew remains available through multilingual Whisper models such as small, medium, or large-v3.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -438,11 +459,11 @@ struct SettingsView: View {
         }
 
         Divider()
-        
+
         VStack(alignment: .leading, spacing: 6) {
             Text("Custom Prompt")
                 .fontWeight(.medium)
-            
+
             TextEditor(text: Binding(
                 get: { settingsStore.settings.customWhisperPrompt ?? settingsStore.settings.defaultLocalWhisperPrompt ?? "" },
                 set: { settingsStore.settings.customWhisperPrompt = $0 }
@@ -450,7 +471,7 @@ struct SettingsView: View {
             .font(.system(.body, design: .monospaced))
             .frame(height: 60)
             .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.3)))
-            
+
             HStack {
                 Text("Provides context to the model to improve accuracy.")
                     .font(.caption)
@@ -501,8 +522,6 @@ struct SettingsView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
     }
-
-    // MARK: - Permissions
 
     @ViewBuilder
     private func permissionRow(
@@ -562,8 +581,6 @@ struct SettingsView: View {
         let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
         NSWorkspace.shared.open(url)
     }
-
-    // MARK: - Directory picker
 
     private func chooseDirectory() {
         let panel = NSOpenPanel()

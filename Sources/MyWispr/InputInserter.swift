@@ -6,13 +6,20 @@ import MyWisprCore
 
 @MainActor
 final class InputInserter {
+    private let dictationFormatter: any DictationTextFormatting
+
+    init(dictationFormatter: any DictationTextFormatting = RuleBasedDictationTextFormatter()) {
+        self.dictationFormatter = dictationFormatter
+    }
+
     func insert(_ text: String, targeting app: NSRunningApplication?) async -> InsertionResult {
         _ = app?.activate(options: [])
         await waitForTargetActivation(app)
 
+        let cleanedText = await dictationFormatter.format(text)
         let textToInsert = applyBidiIfNeeded(
             InsertionTextFormatter.formattedTranscript(
-                text,
+                cleanedText,
                 context: focusedTextContext()
             )
         )
@@ -48,14 +55,8 @@ final class InputInserter {
         }
     }
 
-    // Detects whether the text is predominantly RTL (e.g. Hebrew, Arabic) and,
-    // if so, wraps it in Unicode RLI/PDI isolate markers so that "weak"
-    // punctuation characters (. ? ! ,) render on the correct (left) side.
     private func applyBidiIfNeeded(_ text: String) -> String {
         guard isRTLDominant(text) else { return text }
-        // U+2067 RIGHT-TO-LEFT ISOLATE, U+2069 POP DIRECTIONAL ISOLATE
-        // These are the safest modern bidi controls: they scope the effect to
-        // this run only, without affecting surrounding text directionality.
         return "\u{2067}\(text)\u{2069}"
     }
 
@@ -71,20 +72,20 @@ final class InputInserter {
 
     private func isRTLScalar(_ s: Unicode.Scalar) -> Bool {
         let v = s.value
-        return (v >= 0x0590 && v <= 0x05FF)   // Hebrew
-            || (v >= 0x0600 && v <= 0x06FF)   // Arabic
-            || (v >= 0x0700 && v <= 0x074F)   // Syriac
-            || (v >= 0x0750 && v <= 0x077F)   // Arabic Supplement
-            || (v >= 0x08A0 && v <= 0x08FF)   // Arabic Extended-A
-            || (v >= 0xFB1D && v <= 0xFDFF)   // Hebrew/Arabic Presentation Forms
-            || (v >= 0xFE70 && v <= 0xFEFF)   // Arabic Presentation Forms-B
+        return (v >= 0x0590 && v <= 0x05FF)
+            || (v >= 0x0600 && v <= 0x06FF)
+            || (v >= 0x0700 && v <= 0x074F)
+            || (v >= 0x0750 && v <= 0x077F)
+            || (v >= 0x08A0 && v <= 0x08FF)
+            || (v >= 0xFB1D && v <= 0xFDFF)
+            || (v >= 0xFE70 && v <= 0xFEFF)
     }
 
     private func isLTRScalar(_ s: Unicode.Scalar) -> Bool {
         let v = s.value
-        return (v >= 0x0041 && v <= 0x005A)   // A-Z
-            || (v >= 0x0061 && v <= 0x007A)   // a-z
-            || (v >= 0x00C0 && v <= 0x024F)   // Latin Extended
+        return (v >= 0x0041 && v <= 0x005A)
+            || (v >= 0x0061 && v <= 0x007A)
+            || (v >= 0x00C0 && v <= 0x024F)
     }
 
     private func focusedTextContext() -> InsertionTextContext {

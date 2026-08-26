@@ -4,6 +4,7 @@ enum TranscriptionError: Error, LocalizedError {
     case missingCommand
     case commandFailed(String)
     case emptyOutput
+    case appleSpeechRequiresMacOS26
 
     var errorDescription: String? {
         switch self {
@@ -13,6 +14,8 @@ enum TranscriptionError: Error, LocalizedError {
             return details
         case .emptyOutput:
             return "The transcription command completed but returned no text."
+        case .appleSpeechRequiresMacOS26:
+            return "Apple Speech requires macOS 26 or later. Select Local Whisper for older macOS versions."
         }
     }
 }
@@ -23,6 +26,18 @@ struct TranscriptionService {
 
     func transcribe(audioURL: URL, settings: AppSettings, openAIAPIKey: String) async throws -> String {
         switch settings.selectedEngine {
+        case .appleSpeech:
+            guard #available(macOS 26.0, *) else {
+                throw TranscriptionError.appleSpeechRequiresMacOS26
+            }
+            let locale = settings.singleSelectedTranscriptionLanguage
+                .map { Locale(identifier: $0.whisperCode) }
+                ?? Locale.current
+            return try await AppleSpeechService().transcribe(
+                audioURL: audioURL,
+                locale: locale,
+                vocabulary: settings.customVocabulary
+            )
         case .localWhisper:
             return try await localWhisper.transcribe(audioURL: audioURL, settings: settings)
         case .whisperAPI:
@@ -34,7 +49,6 @@ struct TranscriptionService {
                 prompt: settings.whisperAPIPrompt
             )
         case .customCommand:
-            // Template is user-supplied and intentionally executed as a shell command.
             return try await runShellCommand(
                 template: settings.customCommandTemplate,
                 audioURL: audioURL
