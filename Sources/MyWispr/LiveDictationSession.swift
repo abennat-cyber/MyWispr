@@ -25,6 +25,7 @@ final class LiveDictationSession {
 
     func start(locale: Locale = .current, vocabulary: [String] = []) async throws {
         guard !isRunning else { return }
+        guard await SpeechRecognitionAuthorization.isAuthorized() else { return }
         guard SpeechTranscriber.isAvailable else { return }
         guard let resolvedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else { return }
 

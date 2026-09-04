@@ -30,5 +30,7 @@
 	<string>MyWispr records short dictation clips to transcribe them into text.</string>
 	<key>NSScreenCaptureDescription</key>
 	<string>MyWispr captures system audio during meetings to produce transcribed meeting notes.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>MyWispr uses Apple's on-device speech recognition to turn your dictation into text.</string>
 </dict>
 </plist>
