@@ -13,6 +13,17 @@ When the user asks to "build and release", "publish a new version", "bump versio
 1. Identify the version number to release (e.g. `0.4.5`).
 2. Run the automated script `.agents/skills/build-release/scripts/release.sh`.
 
+## Releasing without a Mac
+
+`release.sh` only runs on macOS: it needs the macOS 26 SDK to compile the Speech
+framework code, plus `codesign` and `hdiutil`. Off macOS, release instead by
+bumping `CFBundleShortVersionString`/`CFBundleVersion` and the README links,
+committing to `main`, then pushing a `v<version>` tag. The `Release` workflow
+(`.github/workflows/release.yml`) builds, ad-hoc signs, and packages the DMG on a
+`macos-26` runner and attaches it to the GitHub release. The same workflow builds
+every push to `main` and every pull request, so a broken build no longer reaches a
+release unnoticed.
+
 ## Usage
 
 Run the script from the repository root:
