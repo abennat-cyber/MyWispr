@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # SpeechAnalyzer and SpeechTranscriber live in the macOS 26 SDK, so older
+    # runner images cannot compile this package at all.
+    runs-on: macos-26
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      dmg: ${{ steps.version.outputs.dmg }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
+
+      - name: Resolve version from Info.plist
+        id: version
+        run: |
+          plist=Sources/MyWispr/Resources/Info.plist
+          version=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "dmg=MyWispr-$version.dmg" >> "$GITHUB_OUTPUT"
+
+      - name: Check tag matches the bundle version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$tag_version" != "${{ steps.version.outputs.version }}" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match CFBundleShortVersionString ${{ steps.version.outputs.version }}." >&2
+            exit 1
+          fi
+
+      - name: Run behaviour tests
+        run: swift run MyWisprBehaviorTests
+
+      - name: Build release binary
+        run: swift build -c release --product MyWispr
+
+      - name: Assemble and ad-hoc sign the app bundle
+        run: |
+          rm -rf .dist
+          mkdir -p .dist/MyWispr.app/Contents/MacOS
+          mkdir -p .dist/MyWispr.app/Contents/Resources
+          cp .build/release/MyWispr .dist/MyWispr.app/Contents/MacOS/MyWispr
+          cp Sources/MyWispr/Resources/Info.plist .dist/MyWispr.app/Contents/Info.plist
+          cp MyWispr.icns .dist/MyWispr.app/Contents/Resources/MyWispr.icns
+          codesign --force --deep --sign - .dist/MyWispr.app
+          codesign --verify --verbose .dist/MyWispr.app
+
+      # v0.4.6 shipped without NSSpeechRecognitionUsageDescription, and macOS
+      # killed the process the first time dictation reached the Speech framework.
+      # TCC reads the description from the bundle plist and, for a bare binary,
+      # from the __TEXT,__info_plist section, so both have to carry every key.
+      - name: Verify privacy usage descriptions survive packaging
+        run: |
+          for key in NSMicrophoneUsageDescription NSSpeechRecognitionUsageDescription NSCalendarsUsageDescription NSScreenCaptureDescription; do
+            /usr/libexec/PlistBuddy -c "Print :$key" .dist/MyWispr.app/Contents/Info.plist > /dev/null
+            otool -P .build/release/MyWispr | grep -q "$key" || {
+              echo "$key is missing from the binary's embedded Info.plist." >&2
+              exit 1
+            }
+            echo "$key present in bundle and binary"
+          done
+
+      - name: Create DMG
+        run: |
+          hdiutil create -volname MyWispr -srcfolder .dist -ov -format UDZO "${{ steps.version.outputs.dmg }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyWispr-dmg
+          path: ${{ steps.version.outputs.dmg }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: MyWispr-dmg
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Release $GITHUB_REF_NAME" \
+            "${{ needs.build.outputs.dmg }}" \
+          || gh release upload "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --clobber \
+            "${{ needs.build.outputs.dmg }}"
