@@ -6,6 +6,7 @@ import Speech
 actor AppleSpeechService {
     enum AppleSpeechError: Error, LocalizedError {
         case unavailable
+        case notAuthorized
         case unsupportedLocale(String)
         case unsupportedAudioFormat
         case emptyTranscript
@@ -14,6 +15,8 @@ actor AppleSpeechService {
             switch self {
             case .unavailable:
                 return "Apple on-device speech transcription is unavailable on this Mac."
+            case .notAuthorized:
+                return "MyWispr needs Speech Recognition access. Enable it in System Settings › Privacy & Security › Speech Recognition."
             case .unsupportedLocale(let locale):
                 return "Apple on-device speech transcription does not support \(locale)."
             case .unsupportedAudioFormat:
@@ -25,6 +28,10 @@ actor AppleSpeechService {
     }
 
     func transcribe(audioURL: URL, locale: Locale, vocabulary: [String]) async throws -> String {
+        guard await SpeechRecognitionAuthorization.isAuthorized() else {
+            throw AppleSpeechError.notAuthorized
+        }
+
         guard SpeechTranscriber.isAvailable else {
             throw AppleSpeechError.unavailable
         }

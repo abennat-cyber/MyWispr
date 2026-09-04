@@ -57,13 +57,14 @@ final class AudioRecorder: NSObject, ObservableObject {
         self.outputURL = url
 
         if #available(macOS 26.0, *) {
-            let preview = livePreviewConfiguration()
-            livePreviewTask?.cancel()
-            livePreviewTask = Task { @MainActor in
-                try? await LiveDictationSession.shared.start(
-                    locale: preview.locale,
-                    vocabulary: preview.vocabulary
-                )
+            if let preview = livePreviewConfiguration() {
+                livePreviewTask?.cancel()
+                livePreviewTask = Task { @MainActor in
+                    try? await LiveDictationSession.shared.start(
+                        locale: preview.locale,
+                        vocabulary: preview.vocabulary
+                    )
+                }
             }
         }
     }
@@ -86,12 +87,15 @@ final class AudioRecorder: NSObject, ObservableObject {
         return outputURL
     }
 
-    private func livePreviewConfiguration() -> (locale: Locale, vocabulary: [String]) {
+    /// The live preview is an Apple Speech feature: it opens a second microphone stream and
+    /// may download a speech model, so it stays off unless that engine is actually selected.
+    private func livePreviewConfiguration() -> (locale: Locale, vocabulary: [String])? {
         let defaultsKey = "com.abennat.mywispr.settings"
         guard let data = UserDefaults.standard.data(forKey: defaultsKey),
-              let settings = try? JSONDecoder().decode(AppSettings.self, from: data)
+              let settings = try? JSONDecoder().decode(AppSettings.self, from: data),
+              settings.selectedEngine == .appleSpeech
         else {
-            return (.current, [])
+            return nil
         }
 
         let locale = settings.singleSelectedTranscriptionLanguage
