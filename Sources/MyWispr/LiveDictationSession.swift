@@ -11,7 +11,7 @@ final class LiveDictationSession {
     static let shared = LiveDictationSession()
 
     private let hudState = LiveDictationHUDState()
-    private lazy var hudPanel = LiveDictationHUDPanel(state: hudState)
+    private var hudPanel: LiveDictationHUDPanel?
     private let capture = LiveAudioCapture()
 
     private var analyzer: SpeechAnalyzer?
@@ -20,20 +20,32 @@ final class LiveDictationSession {
     private var resultTask: Task<Void, Never>?
     private var finalizedText = ""
     private var isRunning = false
+    private var isStarting = false
+    private var pendingFinish = false
 
     private init() {}
 
     func start(locale: Locale = .current, vocabulary: [String] = []) async throws {
-        guard !isRunning else { return }
-        guard await SpeechRecognitionAuthorization.isAuthorized() else { return }
-        guard SpeechTranscriber.isAvailable else { return }
-        guard let resolvedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else { return }
+        guard !isRunning, !isStarting else { return }
+
+        isStarting = true
+        pendingFinish = false
+
+        guard await SpeechRecognitionAuthorization.isAuthorized(),
+              SpeechTranscriber.isAvailable,
+              let resolvedLocale = await SpeechTranscriber.supportedLocale(equivalentTo: locale),
+              !pendingFinish
+        else {
+            isStarting = false
+            pendingFinish = false
+            return
+        }
 
         hudState.transcript = ""
         hudState.level = 0
         hudState.isListening = false
         hudState.statusText = "Preparing live transcription…"
-        hudPanel.present()
+        presentHUD()
 
         do {
             let transcriber = SpeechTranscriber(
@@ -100,22 +112,35 @@ final class LiveDictationSession {
             )
 
             isRunning = true
+            isStarting = false
             hudState.isListening = true
             hudState.statusText = "Listening…"
+
+            // The recording may already have stopped while start() was awaiting the
+            // speech model, in which case finish() only recorded the intent.
+            if pendingFinish {
+                finish()
+            }
         } catch {
+            isStarting = false
             capture.stop()
             inputContinuation?.finish()
             inputContinuation = nil
             await analyzer?.cancelAndFinishNow()
             reset()
-            hudPanel.dismiss()
+            dismissHUD()
             throw error
         }
     }
 
     func finish() {
+        if isStarting {
+            pendingFinish = true
+            return
+        }
+
         guard isRunning else {
-            hudPanel.dismiss()
+            dismissHUD()
             return
         }
 
@@ -137,7 +162,7 @@ final class LiveDictationSession {
             }
 
             try? await Task.sleep(for: .milliseconds(450))
-            self.hudPanel.dismiss()
+            self.dismissHUD()
             self.reset()
         }
     }
@@ -154,6 +179,18 @@ final class LiveDictationSession {
         hudState.isListening = false
         hudState.statusText = ""
         isRunning = false
+        isStarting = false
+        pendingFinish = false
+    }
+
+    private func presentHUD() {
+        let panel = hudPanel ?? LiveDictationHUDPanel(state: hudState)
+        hudPanel = panel
+        panel.present()
+    }
+
+    private func dismissHUD() {
+        hudPanel?.dismiss()
     }
 
     private func ensureModelInstalled(for transcriber: SpeechTranscriber) async throws {
@@ -231,10 +268,9 @@ private final class LiveAudioCapture: @unchecked Sendable {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         isRunning = false
-        converter = nil
-        outputFormat = nil
-        onBuffer = nil
-        onLevel = nil
+        // The converter and callbacks are deliberately kept alive: a tap block may still
+        // be in flight on the audio thread, and releasing them here would tear their
+        // storage down underneath it. start() replaces them before the next tap runs.
     }
 
     private func handle(_ buffer: AVAudioPCMBuffer) {
