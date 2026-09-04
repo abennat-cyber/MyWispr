@@ -3,7 +3,7 @@ import MyWisprCore
 
 @main
 struct MyWisprBehaviorTests {
-    static func main() {
+    static func main() async {
         testHebrewOnlyWithoutVocabularyHasNoLocalPrompt()
         testHebrewOnlyWithVocabularyUsesHebrewPromptFrame()
         testEnglishOnlyKeepsEnglishVocabularyPromptFrame()
@@ -31,6 +31,64 @@ struct MyWisprBehaviorTests {
         testMeetingLiveTranscriptionAppendPolicy()
         testInsertionTextFormatterAddsSpaceAndLowercasesInSentence()
         testInsertionTextFormatterAddsSpaceBeforeNextWord()
+        await testDictationFormatterRemovesFillerWords()
+        await testDictationFormatterKeepsWordsThatMerelyStartWithAFiller()
+        await testDictationFormatterAppliesSpokenLineBreaks()
+        await testDictationFormatterCapitalizesSentencesAndTightensPunctuation()
+        await testDictationFormatterLeavesEmptyInputAlone()
+        await testPassthroughDictationFormatterOnlyTrims()
+    }
+
+    private static func testDictationFormatterRemovesFillerWords() async {
+        let formatted = await RuleBasedDictationTextFormatter()
+            .format("um so I think uh we should ship it")
+
+        expect(
+            formatted == "So I think we should ship it.",
+            "Dictation cleanup should drop filler words and finish the sentence."
+        )
+    }
+
+    private static func testDictationFormatterKeepsWordsThatMerelyStartWithAFiller() async {
+        let formatted = await RuleBasedDictationTextFormatter()
+            .format("Umbrella hmm sales are up")
+
+        expect(
+            formatted == "Umbrella sales are up.",
+            "Dictation cleanup should only strip standalone fillers, never word prefixes."
+        )
+    }
+
+    private static func testDictationFormatterAppliesSpokenLineBreaks() async {
+        let formatted = await RuleBasedDictationTextFormatter()
+            .format("first item new line second item new paragraph third")
+
+        expect(
+            formatted == "First item\nSecond item\n\nThird.",
+            "Spoken line breaks should become real breaks without leaving stray spaces."
+        )
+    }
+
+    private static func testDictationFormatterCapitalizesSentencesAndTightensPunctuation() async {
+        let formatted = await RuleBasedDictationTextFormatter()
+            .format("hello there . how are you ?")
+
+        expect(
+            formatted == "Hello there. How are you?",
+            "Dictation cleanup should capitalize sentences and pull punctuation onto the previous word."
+        )
+    }
+
+    private static func testDictationFormatterLeavesEmptyInputAlone() async {
+        let formatted = await RuleBasedDictationTextFormatter().format("   ")
+
+        expect(formatted.isEmpty, "Dictation cleanup should not invent punctuation for empty input.")
+    }
+
+    private static func testPassthroughDictationFormatterOnlyTrims() async {
+        let formatted = await PassthroughDictationTextFormatter().format("  Ship it  ")
+
+        expect(formatted == "Ship it", "The passthrough formatter should only trim surrounding whitespace.")
     }
 
     private static func testHebrewOnlyWithoutVocabularyHasNoLocalPrompt() {
