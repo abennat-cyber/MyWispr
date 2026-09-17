@@ -45,7 +45,7 @@ public enum InsertionTextFormatter {
         let touchesPreviousWord = context.previousCharacter?.isWordLike == true
         let touchesNextWord = context.nextCharacter?.isWordLike == true
         let shouldAddLeadingSpace = touchesPreviousWord || touchesNextWord
-        let shouldLowercaseFirstLetter = touchesPreviousWord || touchesNextWord
+        let shouldLowercaseFirstLetter = touchesPreviousWord
 
         let cased = shouldLowercaseFirstLetter ? lowercasingFirstCasedCharacter(in: trimmed) : trimmed
         return shouldAddLeadingSpace ? " " + cased : cased
