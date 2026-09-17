@@ -30,7 +30,7 @@ struct MyWisprBehaviorTests {
         testMeetingLiveTranscriptionChunkPolicy()
         testMeetingLiveTranscriptionAppendPolicy()
         testInsertionTextFormatterAddsSpaceAndLowercasesInSentence()
-        testInsertionTextFormatterAddsSpaceBeforeNextWord()
+        testInsertionTextFormatterPreservesCapitalizationBeforeGhostPlaceholder()
         await testDictationFormatterRemovesFillerWords()
         await testDictationFormatterKeepsWordsThatMerelyStartWithAFiller()
         await testDictationFormatterAppliesSpokenLineBreaks()
@@ -466,13 +466,16 @@ struct MyWisprBehaviorTests {
         expect(formatted == " hello team", "Insertion in the middle of a sentence should add a space and lowercase the first word.")
     }
 
-    private static func testInsertionTextFormatterAddsSpaceBeforeNextWord() {
+    private static func testInsertionTextFormatterPreservesCapitalizationBeforeGhostPlaceholder() {
         let formatted = InsertionTextFormatter.formattedTranscript(
-            "Hello team",
-            context: InsertionTextContext(nextCharacter: "w")
+            "Bonjour, est-ce que tu vas comprendre que celui-là c'est du français?",
+            context: InsertionTextContext(nextCharacter: "A")
         )
 
-        expect(formatted == " hello team", "Insertion directly before an existing word should add a leading space and lowercase the first word.")
+        expect(
+            formatted == " Bonjour, est-ce que tu vas comprendre que celui-là c'est du français?",
+            "Ghost placeholder text may require spacing but must not lowercase a new sentence."
+        )
     }
 
     private static func sampleMeetingBundle() -> RecordedMeetingBundle {
